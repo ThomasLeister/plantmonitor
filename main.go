@@ -41,7 +41,7 @@ func main() {
 	log.Printf("Starting Plantmonitor %s ...", versionString)
 
 	// Read config
-	config, err = configManagerPkg.ReadConfig("./")
+	config, err = configManagerPkg.ReadConfig("config.yaml")
 	if err != nil {
 		log.Fatal("Could not parse config:", err)
 	} else {

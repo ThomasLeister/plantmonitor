@@ -23,15 +23,15 @@ giphy:
 
 sensor:
   adc:
-    raw_lower_bound: 0
-    raw_upper_bound: 3612
-    raw_noise_margin: 50
+    raw_lower_bound: 1491   # Value between 1491 and 1504 most of the time. (wet)
+    raw_upper_bound: 3624   # Value between 3610 and 3624 most of the time.  (dry)
+    raw_noise_margin: 100   # Margin between min and max raw value which describe a very similar moisture value (noise). Controls hysteresis.
 
 levels:
   - name: low
     start: 0 
     end: 30
-    notification_interval: 3600
+    notification_interval: 30
 
   - name: normal
     start: 31
@@ -41,6 +41,6 @@ levels:
   - name: high
     start: 67
     end: 100
-    notification_interval: 7200
+    notification_interval: 30
 
 lang_code: "de"    # ISO 639-1 Code of language (needs to be supported by existing lang_<lang_code>.yaml file!)

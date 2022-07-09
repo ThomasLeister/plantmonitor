@@ -24,7 +24,7 @@ func TestNormalizeRawValue(t *testing.T) {
 	}
 
 	// Read config
-	config, err = configManagerPkg.ReadConfig("./")
+	config, err = configManagerPkg.ReadConfig("config.example.yaml")
 	if err != nil {
 		log.Fatal("Could not parse config:", err)
 	} else {
