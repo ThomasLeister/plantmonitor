@@ -53,13 +53,13 @@ func main() {
 	quantifier := quantifierPkg.Quantifier{}
 	quantifier.Init(&config, &sensor)
 
-	// Init reminder engine
-	reminder := reminderPkg.Reminder{}
-	reminder.Init(xmppMessageChannel)
-
 	// Init messenger
 	messenger := messengerPkg.Messenger{}
-	messenger.Init(xmppMessageChannel, giphyclient)
+	messenger.Init(&config, xmppMessageChannel, giphyclient)
+
+	// Init reminder engine
+	reminder := reminderPkg.Reminder{}
+	reminder.Init(&messenger, &sensor)
 
 	// Start a new Goroutine which listens for new messages and sents them over the mqttMessageChannel
 	go mqttclient.RunMQTTListener(mqttMessageChannel)

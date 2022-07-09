@@ -11,6 +11,16 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+type MessageType struct {
+	Messages    []string `yaml:"messages"`
+	GifKeywords string   `yaml:"gif_keywords,omitempty"`
+}
+
+type Messages struct {
+	Online []string               `yaml:"online"`
+	Levels map[string]MessageType `yaml:"levels"`
+}
+
 type Config struct {
 	Xmpp struct {
 		Host       string   `yaml:"host"`
@@ -44,12 +54,14 @@ type Config struct {
 		Start                int    `yaml:"start"`
 		End                  int    `yaml:"end"`
 		Name                 string `yaml:"name"`
-		ChatMessageSteady    string `yaml:"chat_message_steady"`
-		ChatMessageUp        string `yaml:"chat_message_up"`
-		ChatMessageDown      string `yaml:"chat_message_down"`
-		ChatMessageReminder  string `yaml:"chat_message_reminder"`
+		ChatMessageSteady    string `yaml:"chat_message_steady"`         // Reference string to map in "messages" section
+		ChatMessageUp        string `yaml:"chat_message_up,omitempty"`   // Reference string to map in "messages" section
+		ChatMessageDown      string `yaml:"chat_message_down,omitempty"` // Reference string to map in "messages" section
+		ChatMessageReminder  string `yaml:"chat_message_reminder"`       // Reference string to map in "messages" section
 		NotificationInterval int    `yaml:"notification_interval"`
 	} `yaml:"levels"`
+
+	Messages Messages `yaml:"messages"`
 }
 
 func ReadConfig(configPath string) (Config, error) {

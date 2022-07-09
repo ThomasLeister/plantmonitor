@@ -27,26 +27,71 @@ levels:
   - name: low
     start: 0 
     end: 30
-    chat_message_steady: "I'm having too little water"
-    chat_message_up: ""
-    chat_message_down: "Please water me. I'feeling feel thirsty. :("
-    chat_message_reminder: "Don't forget me! I'm dying of thirst!"
+    chat_message_steady: low_steady
+    chat_message_down: low_down
+    chat_message_reminder: low_reminder
     notification_interval: 3600
 
   - name: normal
     start: 31
     end: 66
-    chat_message_steady: "I'm feeling fine!"
-    chat_message_up: "I'm feeling good, again. Thanks!"
-    chat_message_down: "Wow. There was a lot of moisture. I'm feeling fine, again."
-    chat_message_reminder: ""
+    chat_message_steady: normal_steady
+    chat_message_up: normal_up
+    chat_message_down: normal_down
     notification_interval: 0
 
   - name: high
     start: 67
     end: 100
-    chat_message_steady: "I'm having too much water!"
-    chat_message_up: "You gave too much water. Give me my floaty hoop!"
-    chat_message_down: ""
-    chat_message_reminder: "It's still quite wet here. Could you maybe dry me a little?"
+    chat_message_steady: high_steady
+    chat_message_up: high_up
+    chat_message_reminder: high_reminder
     notification_interval: 7200
+
+messages: 
+  online: 
+    - "Ich bin wieder zurück!"
+    - "Da gab es wohl eine Unterbrechung. Ich bin wieder online :)"
+  
+  levels:
+    low_steady:
+      messages:
+        - "Bitte gieß' mich! Ich vertrockne! 😵"
+      gif_keywords: "dying death"
+    low_down:
+      messages: 
+        - "Ich könnte etwas Wasser brauchen. Mein Mund ist so trocken 😧"
+      gif_keywords: "dying death"
+    low_reminder:
+      messages: 
+        - "Hallooo!? Vergiss mich nicht! Ich vertrockne! ☠️"
+      gif_keywords: "dying death"
+
+    normal_steady:
+      messages:
+        - "Mir geht's gut. 🙂"
+        - "Ich fühl mich gut. 🙂"
+        - "Alles klar bei mir! 🙂"
+      gif_keywords: "good fine"
+    normal_up:
+      messages: 
+        - "Ich fühle mich wieder gut. Danke! 😌"
+      gif_keywords: "relieved recovered satisfied"
+    normal_down:
+      messages:
+        - "Puuh! Das war ein bisschen viel Wasser, aber jetzt geht es wieder. 🥴"
+      gif_keywords: "relieved recovered"
+  
+
+    high_steady:
+      messages: 
+        - "Ich habe zu viel Wasser! 🏊‍♂️"
+      gif_keywords: "dying drowning wave"
+    high_up:
+      messages: 
+        - "Da hast du's aber gut gemeint. Ist ziemlich nass hier. 🥵"
+      gif_keywords: "dying drowning wave"
+    high_reminder:
+      messages:
+        - "... immer noch ziemlich feucht hier... etwas trockener wäre mir lieber. 😕"
+      gif_keywords: "dying drowning wave"

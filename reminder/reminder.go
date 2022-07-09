@@ -7,18 +7,20 @@ package reminder
 
 import (
 	"fmt"
-	"time"
 	"log"
+	"time"
 
+	"thomas-leister.de/plantmonitor/messenger"
 	"thomas-leister.de/plantmonitor/quantifier"
-	. "thomas-leister.de/plantmonitor/xmppmanager"
+	"thomas-leister.de/plantmonitor/sensor"
 )
 
 type Reminder struct {
-	quitChannel        chan bool        // Control channel to end reminder loop
-	xmppMessageChannel chan interface{} // Channel to xmpp service
-	ticker             *time.Ticker     // Ticker for notification loop
-	tickerRunning      bool
+	quitChannel   chan bool    // Control channel to end reminder loop
+	ticker        *time.Ticker // Ticker for notification loop
+	tickerRunning bool
+	Sensor        *sensor.Sensor       // Sensor for retrieving the current moisture value
+	Messenger     *messenger.Messenger // Messenger for sending reminder messages
 }
 
 func (r *Reminder) reminderNotificationLoop(quitChannel chan bool, ticker *time.Ticker, level quantifier.QuantificationLevel) {
@@ -29,24 +31,25 @@ func (r *Reminder) reminderNotificationLoop(quitChannel chan bool, ticker *time.
 		case <-quitChannel:
 			ticker.Stop()
 			r.tickerRunning = false
-			log.Println("Timer: Stopped.")
+			log.Println("Reminder: Timer stopped.")
 			return
 		case t := <-ticker.C:
-			fmt.Println("Timer: Remembering user ...", t)
-			r.xmppMessageChannel <- XmppTextMessage(level.ChatMessageReminder)
+			fmt.Println("Reminder: Remembering user ...", t)
+			r.Messenger.SendReminder(level, r.Sensor.Normalized.Current.Value)
 		}
 	}
 }
 
-func (r *Reminder) Init(xmppMessageChannel chan interface{}) {
-	r.xmppMessageChannel = xmppMessageChannel
+func (r *Reminder) Init(messenger *messenger.Messenger, sensor *sensor.Sensor) {
+	r.Messenger = messenger
+	r.Sensor = sensor
 
 	// Init quit channel
 	r.quitChannel = make(chan bool)
 }
 
 func (r *Reminder) Set(currentLevel quantifier.QuantificationLevel) {
-	log.Println("Timer: Setting timer")
+	log.Println("Reminder: Setting timer")
 	r.Stop()
 	r.ticker = time.NewTicker(currentLevel.NotificationInterval)
 	go r.reminderNotificationLoop(r.quitChannel, r.ticker, currentLevel)
