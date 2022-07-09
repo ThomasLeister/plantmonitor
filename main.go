@@ -1,3 +1,8 @@
+/*
+ * SPDX-License-Identifier: MIT
+ * (valid for all sub-packages)
+ */
+
 package main
 
 import (
