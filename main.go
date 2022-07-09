@@ -16,6 +16,9 @@ import (
 	xmppManagerPkg "thomas-leister.de/plantmonitor/xmppmanager"
 )
 
+/* Version string. Is manipulated by build script.*/
+var versionString string = "0.0.0"
+
 /* Global var for config*/
 var config configManagerPkg.Config
 
@@ -25,7 +28,8 @@ func main() {
 	xmppMessageOutChannel := make(chan interface{})
 	xmppMessageInChannel := make(chan xmppManagerPkg.XmppInMessage)
 
-	log.Println(("Starting Plantmonitor ..."))
+	// Welcome message and version
+	log.Printf("Starting Plantmonitor %s ...", versionString)
 
 	// Read config
 	config, err = configManagerPkg.ReadConfig("config.yaml")
