@@ -95,7 +95,7 @@ func main() {
 			fmt.Println("Got a HUP signal! Reloading configuration ...")
 
 			// Read config
-			config, err = configManagerPkg.ReadConfig("./")
+			config, err = configManagerPkg.ReadConfig("config.yaml")
 			if err != nil {
 				log.Fatal("Could not parse config:", err)
 			} else {
