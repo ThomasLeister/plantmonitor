@@ -13,6 +13,7 @@ mqtt:
   username: myapp@ttn
   password: myapppassword
   topic: v3/myapp@ttn/devices/+/up
+  client_id: plantmonitor
 
 giphy:
   api_key: "<mygiphykey>"

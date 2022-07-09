@@ -16,6 +16,7 @@ type MqttClient struct {
 	Username           string
 	Password           string
 	Topic              string
+	ClientId           string
 	connectHandler     mqtt.OnConnectHandler
 	connectLostHandler mqtt.OnConnectHandler
 }
@@ -57,6 +58,7 @@ func (m *MqttClient) Init(config *configmanager.Config) {
 	m.Username = config.Mqtt.Username
 	m.Password = config.Mqtt.Password
 	m.Topic = config.Mqtt.Topic
+	m.ClientId = config.Mqtt.ClientId
 }
 
 func (m *MqttClient) RunMQTTListener(mqttMessageChannel chan mqtt.Message) {
@@ -64,7 +66,7 @@ func (m *MqttClient) RunMQTTListener(mqttMessageChannel chan mqtt.Message) {
 
 	// Set options for connection
 	opts.AddBroker(fmt.Sprintf("mqtts://%s:%d", m.Host, m.Port))
-	opts.SetClientID("go_mqtt_client")
+	opts.SetClientID(m.ClientId)
 	opts.SetUsername(m.Username)
 	opts.SetPassword(m.Password)
 

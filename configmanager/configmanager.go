@@ -36,6 +36,7 @@ type Config struct {
 		Username string `yaml:"username"`
 		Password string `yaml:"password"`
 		Topic    string `yaml:"topic"`
+		ClientId string `yaml:"client_id"`
 	} `yaml:"mqtt"`
 
 	Giphy struct {
