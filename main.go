@@ -9,7 +9,7 @@ import (
 	configManagerPkg "thomas-leister.de/plantmonitor/configmanager"
 	quantifierPkg "thomas-leister.de/plantmonitor/quantifier"
 	reminderPkg "thomas-leister.de/plantmonitor/reminder"
-	giphyPkg "thomas-leister.de/plantmonitor/giphy"
+	gifManagerPkg "thomas-leister.de/plantmonitor/gifmanager"
 	xmppManagerPkg "thomas-leister.de/plantmonitor/xmppmanager"
 	mqttManagerPkg "thomas-leister.de/plantmonitor/mqttmanager"
 	messengerPkg "thomas-leister.de/plantmonitor/messenger"
@@ -59,7 +59,7 @@ func main() {
 	mqttclient.Init(&config)
 
 	// Init Giphy
-	giphyclient := giphyPkg.GiphyClient{}
+	giphyclient := gifManagerPkg.GiphyClient{}
 	giphyclient.Init(config.Giphy.ApiKey)
 
 	// Init quantifier
@@ -77,14 +77,14 @@ func main() {
 	// Start a new Goroutine which listens for new messages and sents them over the mqttMessageChannel
 	go mqttclient.RunMQTTListener(mqttMessageChannel)
 
-	// Start another Goroutine which sends XMPP messages
+	// Start another Goroutine which sends XMPP messages when receiving new XmppTextMessage or XmppGifMessage strings
 	go xmppclient.RunXMPPClient(xmppMessageChannel)
 
 	
-
-	// Watch the channel and receive new messages
-	for mqttMessage := range mqttMessageChannel {
-		//fmt.Printf("Received message: %s from topic: %s\n", mqttMessage.Payload(), mqttMessage.Topic())
+	/*
+	 * Watch the MQTT channel and receive new messages
+	 */
+	 for mqttMessage := range mqttMessageChannel {
 		mqttDecodedPayload := mqttclient.ParseMqttMessage(mqttMessage)
 		moistureRaw := mqttDecodedPayload.UplinkMessage.DecodedPayload.MoistureRaw
 
@@ -93,7 +93,7 @@ func main() {
 
 		fmt.Printf("Raw value: %d  |  Normalized value: %d %% \n", moistureRaw, normalizedMoistureValue)
 
-		// Put value into evaluation
+		// Put normalized value into quantifier evaluation
 		levelDirection, currentLevel, err := quantifier.EvaluateValue(normalizedMoistureValue)
 		if err != nil {
 			fmt.Printf("Error happended during evaluation.")
@@ -103,13 +103,11 @@ func main() {
 		// Send message via messenger
 		messenger.ResolveLevelToMessage(normalizedMoistureValue, levelDirection, currentLevel)
 
-		// Check for urgency.
-		// If state demands urgent action, set a periodic reminder!
+		// Check for urgency and set reminder accordingly
 		if currentLevel.Urgency != quantifierPkg.UrgencyLow {
 			reminder.Set(currentLevel)
 		} else {
-			// Do nothing. One message is enough. Stop existing reminders.
-			reminder.Stop()
+			reminder.Stop()		// Do nothing. One message is enough. Stop existing reminders.
 		}
 	}
 

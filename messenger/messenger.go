@@ -8,13 +8,13 @@ import(
 	"fmt"
 	"thomas-leister.de/plantmonitor/xmppmanager"
 	"thomas-leister.de/plantmonitor/quantifier"
-	"thomas-leister.de/plantmonitor/giphy"
+	"thomas-leister.de/plantmonitor/gifmanager"
 )
 
 type Messenger struct {
 	HistoryExists bool
 	XmppMessageChannel chan interface{}
-	GiphyClient giphy.GiphyClient 
+	GiphyClient gifmanager.GiphyClient 
 }
 
 /*
@@ -22,7 +22,7 @@ type Messenger struct {
  * - xmppMessageChannel to use
  * - Giphy client to use
  */
-func (m *Messenger) Init(xmppMessageChannel chan interface{}, giphyClient giphy.GiphyClient) {
+func (m *Messenger) Init(xmppMessageChannel chan interface{}, giphyClient gifmanager.GiphyClient) {
 	m.XmppMessageChannel = xmppMessageChannel
 	m.GiphyClient = giphyClient
 }

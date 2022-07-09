@@ -1,4 +1,4 @@
-package giphy
+package gifmanager
 
 import (
 	"fmt"
