@@ -1,0 +1,20 @@
+[Unit]
+Description=Plant observer
+ConditionPathExists=/home/plantmonitor
+After=network.target
+
+[Service]
+Type=simple
+User=plantmonitor
+Group=plantmonitor
+WorkingDirectory=/home/plantmonitor
+ExecStart=/home/plantmonitor/plantmonitor
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=60
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=plantmonitor
+
+[Install]
+WantedBy=multi-user.target

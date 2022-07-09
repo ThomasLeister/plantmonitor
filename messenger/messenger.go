@@ -124,12 +124,23 @@ func (m *Messenger) Init(config *configmanager.Config, xmppMessageOutChannel cha
 
 	log.Println("Initializing messenger ...")
 
-	m.Messages = &config.Messages
 	m.XmppMessageOutChannel = xmppMessageOutChannel
 	m.XmppMessageInChannel = xmppMessageInChannel
 	m.GiphyClient = giphyClient
 	m.Sensor = sensor
 	m.PermittedSenders = config.Xmpp.Recipients
+
+	err = m.loadMessages(config)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *Messenger) loadMessages(config *configmanager.Config) error {
+	var err error
+	m.Messages = &config.Messages
 
 	// Load message strings and parse templates
 	m.Templates.CurrentStateAnswer, err = template.New("").Parse(config.Messages.Answers.CurrentState)
@@ -143,6 +154,11 @@ func (m *Messenger) Init(config *configmanager.Config, xmppMessageOutChannel cha
 	}
 
 	return nil
+}
+
+func (m *Messenger) Reload(config *configmanager.Config) {
+	log.Println("Messenger: Reloading messages")
+	m.loadMessages(config)
 }
 
 /*

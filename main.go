@@ -1,7 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 
@@ -73,6 +77,29 @@ func main() {
 	// Init watchdog
 	watchdog := watchdogPkg.Watchdog{}
 	watchdog.Init(&config, &messenger)
+
+	/*
+	 * Start signal handler routine
+	 */
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, syscall.SIGHUP) // React to SIGHUP signals (daemon "reload")
+	go func() {
+		for range signalChan {
+			fmt.Println("Got a HUP signal! Reloading configuration ...")
+
+			// Read config
+			config, err = configManagerPkg.ReadConfig("./")
+			if err != nil {
+				log.Fatal("Could not parse config:", err)
+			} else {
+				log.Println("Config was read and parsed!")
+
+				// Reload parts of other services
+				quantifier.Reload(&config)
+				messenger.Reload(&config)
+			}
+		}
+	}()
 
 	// Start a new Goroutine which listens for new messages and sents them over the mqttMessageChannel
 	go mqttclient.RunMQTTListener(mqttMessageChannel)

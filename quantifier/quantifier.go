@@ -47,6 +47,11 @@ func (q *Quantifier) Init(config *configmanager.Config, sensor *sensor.Sensor) {
 	// Set sensor reference
 	q.Sensor = sensor
 
+	// Load quantification levels
+	q.loadLevels(config)
+}
+
+func (q *Quantifier) loadLevels(config *configmanager.Config) {
 	// Read all quantification levels from config and copy them into q.QuantificationLevels
 	q.QuantificationLevels = make([]QuantificationLevel, 0)
 
@@ -70,6 +75,12 @@ func (q *Quantifier) Init(config *configmanager.Config, sensor *sensor.Sensor) {
 	fmt.Printf("\nAvailable quantification levels:\n\n")
 	printLevelTable(&q.QuantificationLevels)
 	fmt.Printf("\n")
+}
+
+func (q *Quantifier) Reload(config *configmanager.Config) {
+	// Reload levels
+	log.Println("Quantifier: Reloading quantification levels")
+	q.loadLevels(config)
 }
 
 /*

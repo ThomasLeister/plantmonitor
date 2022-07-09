@@ -39,6 +39,13 @@ Run build script:
 The `plantmonitor` binary will contain the application.
 
 
+## Installing Plantmonitor
+
+* Create User folder etc
+* Copy config.yaml and lang_de.yaml
+* install Systemd service in dist/plantmonitor.service)
+
+
 ## Configuring Plantmonitor
 
 (TBD)
@@ -51,6 +58,12 @@ The `plantmonitor` binary will contain the application.
 
 ## Running Plantmonitor
 
-(TBD)
-* Systemd Startup file
-* 
+    systemctl start plantmonitor
+    journalctl -u plantmonitor -f
+
+
+Reload daemon after config change (levels and messages):
+
+    systemctl reload plantmonitor
+
+
