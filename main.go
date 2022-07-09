@@ -6,17 +6,17 @@ import (
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 
-	"thomas-leister.de/plantmonitor/configmanager"
-	"thomas-leister.de/plantmonitor/quantifier"
-	"thomas-leister.de/plantmonitor/reminder"
-	"thomas-leister.de/plantmonitor/giphy"
-	"thomas-leister.de/plantmonitor/xmppmanager"
-	"thomas-leister.de/plantmonitor/mqttmanager"
-	"thomas-leister.de/plantmonitor/messenger"
+	configManagerPkg "thomas-leister.de/plantmonitor/configmanager"
+	quantifierPkg "thomas-leister.de/plantmonitor/quantifier"
+	reminderPkg "thomas-leister.de/plantmonitor/reminder"
+	giphyPkg "thomas-leister.de/plantmonitor/giphy"
+	xmppManagerPkg "thomas-leister.de/plantmonitor/xmppmanager"
+	mqttManagerPkg "thomas-leister.de/plantmonitor/mqttmanager"
+	messengerPkg "thomas-leister.de/plantmonitor/messenger"
 )
 
 /* Global var for config*/
-var config configmanager.Config
+var config configManagerPkg.Config
 
 
 func normalizeRawValue(rawValue int) int {
@@ -42,7 +42,7 @@ func main() {
 	fmt.Println(("Starting Plantmonitor ..."))
 
 	// Read config
-	config, err = configmanager.ReadConfig("config.yaml")
+	config, err = configManagerPkg.ReadConfig("config.yaml")
 	if err != nil {
 		fmt.Println("Could not parse config:", err)
 		os.Exit(1)
@@ -51,28 +51,28 @@ func main() {
 	}
 
 	// Init xmppmanager 
-	xmppclient := xmppmanager.XmppClient{}
+	xmppclient := xmppManagerPkg.XmppClient{}
 	xmppclient.Init(&config)
 
 	// Init mqttmanager
-	mqttclient := mqttmanager.MqttClient{}
+	mqttclient := mqttManagerPkg.MqttClient{}
 	mqttclient.Init(&config)
 
 	// Init Giphy
-	giphyClient := giphy.GiphyClient{}
-	giphyClient.Init(config.Giphy.ApiKey)
+	giphyclient := giphyPkg.GiphyClient{}
+	giphyclient.Init(config.Giphy.ApiKey)
 
 	// Init quantifier
-	myQuantifier := quantifier.Quantifier{}
-	myQuantifier.Init(&config)
+	quantifier := quantifierPkg.Quantifier{}
+	quantifier.Init(&config)
 
 	// Init reminder engine
-	myReminder := reminder.Reminder{}
-	myReminder.Init(xmppMessageChannel)
+	reminder := reminderPkg.Reminder{}
+	reminder.Init(xmppMessageChannel)
 
 	// Init messenger 
-	myMessenger := messenger.Messenger{}
-	myMessenger.Init(xmppMessageChannel, giphyClient)
+	messenger := messengerPkg.Messenger{}
+	messenger.Init(xmppMessageChannel, giphyclient)
 
 	// Start a new Goroutine which listens for new messages and sents them over the mqttMessageChannel
 	go mqttclient.RunMQTTListener(mqttMessageChannel)
@@ -94,24 +94,23 @@ func main() {
 		fmt.Printf("Raw value: %d  |  Normalized value: %d %% \n", moistureRaw, normalizedMoistureValue)
 
 		// Put value into evaluation
-		levelDirection, currentLevel, err := myQuantifier.EvaluateValue(normalizedMoistureValue)
+		levelDirection, currentLevel, err := quantifier.EvaluateValue(normalizedMoistureValue)
 		if err != nil {
 			fmt.Printf("Error happended during evaluation.")
 			break
 		}
 
 		// Send message via messenger
-		myMessenger.ResolveLevelToMessage(normalizedMoistureValue, levelDirection, currentLevel)
+		messenger.ResolveLevelToMessage(normalizedMoistureValue, levelDirection, currentLevel)
 
 		// Check for urgency.
 		// If state demands urgent action, set a periodic reminder!
-		if currentLevel.Urgency != quantifier.UrgencyLow {
-			myReminder.Set(currentLevel)
+		if currentLevel.Urgency != quantifierPkg.UrgencyLow {
+			reminder.Set(currentLevel)
 		} else {
-			// Do nothing. One message is enough.
-			myReminder.Stop()
+			// Do nothing. One message is enough. Stop existing reminders.
+			reminder.Stop()
 		}
-
 	}
 
 	fmt.Println("Plant monitor failed. Exiting ...")
