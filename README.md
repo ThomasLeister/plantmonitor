@@ -1,6 +1,8 @@
 # Plantmonitor
 
-_Backend for a LoRaWAN-based / MQTT-based soil moisture sensor, which sends notifications via XMPP._
+_Backend for a LoRaWAN-based / MQTT-based soil moisture sensor, which sends notifications via XMPP._ 
+
+Also see: [Blog post on thomas-leister.de [German]](https://thomas-leister.de/lorawan-plantmonitor/)
 
 ## Context
 
