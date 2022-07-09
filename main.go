@@ -75,28 +75,40 @@ func main() {
 	 * Watch the MQTT channel and receive new messages
 	 */
 	for mqttMessage := range mqttMessageChannel {
+		log.Println("Received new sensor value via MQTT!")
+
+		// Decode MQTT message
 		mqttDecodedPayload := mqttclient.ParseMqttMessage(mqttMessage)
 		moistureRaw := mqttDecodedPayload.UplinkMessage.DecodedPayload.MoistureRaw
 
 		// Update current sensor value
 		sensor.UpdateCurrentValue(int(moistureRaw))
-		log.Printf("Raw value: %d  |  Normalized value: %d %% \n", moistureRaw, sensor.Normalized.Current.Value)
+		log.Printf("Raw sensor value: %d  |  Normalized value: %d %% \n", moistureRaw, sensor.Normalized.Current.Value)
 
-		// Put current sensor value into quantifier evaluation
+		// Put current sensor value into quantifier
 		levelDirection, currentLevel, err := quantifier.EvaluateValue(sensor.Normalized.Current.Value)
 		if err != nil {
 			log.Panic("Error happended during evaluation.")
 			break
 		}
 
-		// Send message via messenger
-		messenger.ResolveLevelToMessage(sensor.Normalized.Current.Value, levelDirection, currentLevel)
+		/*
+		 * Check if level has changed. Only notify
+		 *     - on level change or
+		 *     - if no history exists (first sensor value was read / quantified)
+		 */
+		if levelDirection != 0 || !quantifier.HistoryExists() {
+			// Send message via messenger
+			messenger.ResolveLevelToMessage(sensor.Normalized.Current.Value, levelDirection, currentLevel)
 
-		// Check reminder period and reminder timer accordingly
-		if currentLevel.NotificationInterval != 0 {
-			reminder.Set(currentLevel)
+			// Check reminder period and reminder timer accordingly
+			if currentLevel.NotificationInterval != 0 {
+				reminder.Set(currentLevel) // Set a reminder
+			} else {
+				reminder.Stop() // Do nothing. One message is enough. Stop existing reminders.
+			}
 		} else {
-			reminder.Stop() // Do nothing. One message is enough. Stop existing reminders.
+			log.Println("Quantification level did not change and we have quantification history. No need to notify.")
 		}
 	}
 
