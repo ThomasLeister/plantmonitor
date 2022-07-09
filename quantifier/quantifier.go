@@ -113,9 +113,6 @@ func (q *Quantifier) EvaluateValue(moistureValue int) (int, QuantificationLevel,
 	var levelDirection int = 0
 	var err error
 
-	// Save old value to history
-	q.History = q.Current
-
 	// Calculate hysteresis margin. Its polarity depends on the direction of normalized sensor values. It's absolute value by settings.
 	hysteresisMargin := q.Sensor.Normalized.Current.Direction * (q.Sensor.Normalized.NoiseMargin / 2)
 	log.Printf("Sensor direction: %d | Hysteresis threshold shift: %d \n", q.Sensor.Normalized.Current.Direction, hysteresisMargin)
@@ -148,6 +145,9 @@ func (q *Quantifier) EvaluateValue(moistureValue int) (int, QuantificationLevel,
 		// We do not have history, yet. Let's say there has not been a change in value... and save the current value to history
 		log.Println("We do not have quantifier history, yet! Assuming levelDirection=0 (steady)")
 	}
+
+	// Save old value to history
+	q.History = q.Current
 
 	// Return levelDirection, QuantificationLevel and error values
 	return levelDirection, currentLevel, err
