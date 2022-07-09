@@ -18,10 +18,17 @@ import (
 	"thomas-leister.de/plantmonitor/configmanager"
 )
 
-type XmppTextMessage string
+type XmppTextMessage struct {
+	Recipients []string
+	Text       string
+}
 
-type XmppGifMessage string
+type XmppGifMessage struct {
+	Recipients []string
+	Url        string
+}
 
+// General incoming XMPP message
 type XmppInMessage struct {
 	From string
 	Body string
@@ -96,26 +103,28 @@ func (x *XmppClient) RunXMPPClient(xmppMessageOutChannel chan interface{}, xmppM
 	// Wait for a new message to send (listen on channel)
 	for xmppMessage := range xmppMessageOutChannel {
 		xmppMessageStanza := stanza.Message{}
+		var recipients []string
 
 		// Find out stanza type (TextMessage or GifMessage)
 		switch xmppMessage.(type) {
 		case XmppTextMessage:
 			log.Println("XMPP: Sending a text message")
-			tm := xmppMessage.(XmppTextMessage)
+			m := xmppMessage.(XmppTextMessage)
+
+			recipients = m.Recipients
 			xmppMessageStanza = stanza.Message{
-				//Attrs: stanza.Attrs{To: x.Recipient},
-				Body: string(tm),
+				Body: string(m.Text),
 			}
 
 		case XmppGifMessage:
 			log.Println("XMPP: Sending a GIF message")
-			gm := xmppMessage.(XmppGifMessage)
+			m := xmppMessage.(XmppGifMessage)
 
+			recipients = m.Recipients
 			xmppMessageStanza = stanza.Message{
-				//Attrs: stanza.Attrs{To: x.Recipient},
 				Extensions: []stanza.MsgExtension{
 					stanza.OOB{
-						URL:  string(gm),
+						URL:  string(m.Url),
 						Desc: "GIF with meme",
 					},
 				},
@@ -126,8 +135,13 @@ func (x *XmppClient) RunXMPPClient(xmppMessageOutChannel chan interface{}, xmppM
 			continue // Quit this for() round
 		}
 
-		// For each recipient: Set recipient and send message
-		for _, recipient := range x.Recipients {
+		// If recipients are undefined, broadcast to all users
+		if len(recipients) == 0 {
+			recipients = x.Recipients
+		}
+
+		// For each recipient: Set recipient in stanza and send message
+		for _, recipient := range recipients {
 			xmppMessageStanza.Attrs = stanza.Attrs{To: recipient}
 
 			err := client.Send(xmppMessageStanza)

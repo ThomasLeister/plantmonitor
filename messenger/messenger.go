@@ -28,26 +28,33 @@ type Messenger struct {
 
 func (m *Messenger) ResponderLoop() {
 	for xmppMessage := range m.XmppMessageInChannel {
-		// Check which data was sent
-		sender := xmppMessage.From
-		//body := xmppMessage.Body
+		log.Printf("Retrieved a message from %s!", xmppMessage.From)
 
-		log.Printf("Retrieved a message from %s! Answering ...", sender)
+		// Set recipients (= sender of this message)
+		recipients := []string{xmppMessage.From}
 
+		// Cimplify body message to be able to understand intention
 		simpleBodyString := strings.TrimSpace(strings.ToLower(xmppMessage.Body))
 
-		if simpleBodyString == "help" {
-			m.XmppMessageOutChannel <- xmppmanager.XmppTextMessage("Derzeit gibt es nur wenige Kommandos. Versuche mal: \n- \"Wie gehts's dir?\"")
-		} else if simpleBodyString == "wie geht's dir?" {
-			// If we have valid data, send them
-			if m.Sensor.Normalized.History.Valid {
-				// Respond via out channel
-				m.XmppMessageOutChannel <- xmppmanager.XmppTextMessage("Hey! Hier die aktuellen Daten über mich:\n" + "Bodenfeuchte: " + strconv.Itoa(m.Sensor.Normalized.Current.Value) + " %")
+		if simpleBodyString != "" {
+			if simpleBodyString == "help" {
+				log.Println("Sending help menu")
+				m.XmppMessageOutChannel <- xmppmanager.XmppTextMessage{Recipients: recipients, Text: "Derzeit gibt es nur wenige Kommandos. Versuche mal: \n- \"Wie gehts's dir?\""}
+			} else if simpleBodyString == "wie geht's dir?" {
+				// If we have valid data, send them
+				log.Println("Sending health info")
+				if m.Sensor.Normalized.History.Valid {
+					// Respond via out channel
+					m.XmppMessageOutChannel <- xmppmanager.XmppTextMessage{Recipients: recipients, Text: "Hey! Hier die aktuellen Daten über mich:\n" + "Bodenfeuchte: " + strconv.Itoa(m.Sensor.Normalized.Current.Value) + " %"}
+				} else {
+					m.XmppMessageOutChannel <- xmppmanager.XmppTextMessage{Recipients: recipients, Text: "Leider habe ich noch keine aktuellen Sensordaten für dich."}
+				}
 			} else {
-				m.XmppMessageOutChannel <- xmppmanager.XmppTextMessage("Leider habe ich noch keine aktuellen Sensordaten für dich.")
+				log.Println("Sending help info")
+				m.XmppMessageOutChannel <- xmppmanager.XmppTextMessage{Recipients: recipients, Text: "Konnte das Kommando nicht finden. Versuche: \"help\""}
 			}
 		} else {
-			m.XmppMessageOutChannel <- xmppmanager.XmppTextMessage("Konnte das Kommando nicht finden. Versuche: \"help\"")
+			log.Println("Dropped message because it does not contain body.")
 		}
 	}
 }
@@ -128,11 +135,11 @@ func (m *Messenger) ResolveLevelToMessage(normalizedMoistureValue int, levelDire
 	log.Printf("Sending message: \"%s\" \n", textMessage)
 
 	// Send text message
-	m.XmppMessageOutChannel <- xmppmanager.XmppTextMessage(textMessage + " \nBodenfeuchte: " + strconv.Itoa(normalizedMoistureValue) + " %")
+	m.XmppMessageOutChannel <- xmppmanager.XmppTextMessage{Text: textMessage + " \nBodenfeuchte: " + strconv.Itoa(normalizedMoistureValue) + " %"}
 
 	// Send GIF (if set in config)
 	if gifUrl != "" {
-		m.XmppMessageOutChannel <- xmppmanager.XmppGifMessage(gifUrl)
+		m.XmppMessageOutChannel <- xmppmanager.XmppGifMessage{Url: gifUrl}
 	}
 
 	return nil
@@ -154,11 +161,11 @@ func (m *Messenger) SendReminder(currentLevel quantifier.QuantificationLevel, no
 	log.Printf("Sending message: \"%s\" \n", textMessage)
 
 	// Send text message
-	m.XmppMessageOutChannel <- xmppmanager.XmppTextMessage(textMessage + " \nBodenfeuchte: " + strconv.Itoa(normalizedMoistureValue) + " %")
+	m.XmppMessageOutChannel <- xmppmanager.XmppTextMessage{Text: textMessage + " \nBodenfeuchte: " + strconv.Itoa(normalizedMoistureValue) + " %"}
 
 	// Send GIF (if set in config)
 	if gifUrl != "" {
-		m.XmppMessageOutChannel <- xmppmanager.XmppGifMessage(gifUrl)
+		m.XmppMessageOutChannel <- xmppmanager.XmppGifMessage{Url: gifUrl}
 	}
 
 	return nil
