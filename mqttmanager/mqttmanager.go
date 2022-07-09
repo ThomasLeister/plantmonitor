@@ -33,7 +33,7 @@ type MqttPayload struct {
 	UplinkMessage MqttUplinkMessage `json:"uplink_message"`
 }
 
-func (m *MqttClient) ParseMqttMessage(mqttMessage mqtt.Message) MqttPayload {
+func (m *MqttClient) ParseMqttMessage(mqttMessage mqtt.Message) MqttDecodedPayload {
 	var mqttPayload MqttPayload
 
 	err := json.Unmarshal(mqttMessage.Payload(), &mqttPayload)
@@ -41,7 +41,7 @@ func (m *MqttClient) ParseMqttMessage(mqttMessage mqtt.Message) MqttPayload {
 		panic(err)
 	}
 
-	return mqttPayload
+	return mqttPayload.UplinkMessage.DecodedPayload
 }
 
 func (m *MqttClient) ConnectHandler(client mqtt.Client) {
@@ -63,7 +63,7 @@ func (m *MqttClient) Init(config *configmanager.Config) {
 	m.ClientId = config.Mqtt.ClientId
 }
 
-func (m *MqttClient) RunMQTTListener(mqttMessageChannel chan mqtt.Message) {
+func (m *MqttClient) RunMQTTListener(mqttMessageChannel chan MqttDecodedPayload) {
 	opts := mqtt.NewClientOptions()
 
 	// Set options for connection
@@ -73,8 +73,9 @@ func (m *MqttClient) RunMQTTListener(mqttMessageChannel chan mqtt.Message) {
 	opts.SetPassword(m.Password)
 
 	// Set callback functions
-	opts.SetDefaultPublishHandler(func(c mqtt.Client, m mqtt.Message) {
-		mqttMessageChannel <- m
+	opts.SetDefaultPublishHandler(func(c mqtt.Client, message mqtt.Message) {
+		mqttDecodedPayload := m.ParseMqttMessage(message)
+		mqttMessageChannel <- mqttDecodedPayload
 	})
 	opts.OnConnect = m.ConnectHandler
 	opts.OnConnectionLost = m.ConnectLostHandler

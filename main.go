@@ -12,8 +12,6 @@ import (
 	"os/signal"
 	"syscall"
 
-	mqtt "github.com/eclipse/paho.mqtt.golang"
-
 	configManagerPkg "thomas-leister.de/plantmonitor/configmanager"
 	gifManagerPkg "thomas-leister.de/plantmonitor/gifmanager"
 	messengerPkg "thomas-leister.de/plantmonitor/messenger"
@@ -35,7 +33,7 @@ func main() {
 	var err error
 	var quantifierHistoryExists = false
 
-	mqttMessageChannel := make(chan mqtt.Message)
+	mqttMessageChannel := make(chan mqttManagerPkg.MqttDecodedPayload)
 	xmppMessageOutChannel := make(chan interface{})
 	xmppMessageInChannel := make(chan xmppManagerPkg.XmppInMessage)
 
@@ -127,8 +125,11 @@ func main() {
 		watchdog.Reset()
 
 		// Decode MQTT message
-		mqttDecodedPayload := mqttclient.ParseMqttMessage(mqttMessage)
-		moistureRaw := mqttDecodedPayload.UplinkMessage.DecodedPayload.MoistureRaw
+		/*mqttDecodedPayload := mqttclient.ParseMqttMessage(mqttMessage)
+		moistureRaw := mqttDecodedPayload.UplinkMessage.DecodedPayload.MoistureRaw*/
+
+		// Get moistureRaw from mqttMessage
+		moistureRaw := mqttMessage.MoistureRaw
 
 		// Update current sensor value
 		sensor.UpdateCurrentValue(int(moistureRaw))
