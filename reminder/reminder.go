@@ -5,11 +5,12 @@ import (
 	"time"
 
 	"thomas-leister.de/plantmonitor/quantifier"
+	. "thomas-leister.de/plantmonitor/xmppmanager"
 )
 
 type Reminder struct {
 	quitChannel        chan bool    // Control channel to end reminder loop
-	xmppMessageChannel chan string  // Channel to xmpp service
+	xmppMessageChannel chan interface{}  // Channel to xmpp service
 	ticker             *time.Ticker // Ticker for notification loop
 	tickerRunning      bool
 }
@@ -26,12 +27,12 @@ func (r *Reminder) reminderNotificationLoop(quitChannel chan bool, ticker *time.
 			return
 		case t := <-ticker.C:
 			fmt.Println("Remembering ...", t)
-			r.xmppMessageChannel <- level.ChatMessageReminder
+			r.xmppMessageChannel <- XmppTextMessage(level.ChatMessageReminder)
 		}
 	}
 }
 
-func (r *Reminder) Init(xmppMessageChannel chan string) {
+func (r *Reminder) Init(xmppMessageChannel chan interface{}) {
 	r.xmppMessageChannel = xmppMessageChannel
 
 	// Init quit channel

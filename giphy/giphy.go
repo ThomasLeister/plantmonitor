@@ -1,34 +1,27 @@
 package giphy
 
-/*
- * Giphy API keys needs to be set:
- * export GIPHY_API_KEY="hRqkUNLwdvypZFWfw9IbqWHvDRq5AJrO"
- */
-
 import (
 	"fmt"
-	"github.com/peterhellberg/giphy"
-	"math/rand"
+	"github.com/sanzaru/go-giphy"
 )
 
 type Giphy struct {
-	Apiclient *giphy.Client
+	Apiclient *libgiphy.Giphy
 } 
 
-func (g *Giphy) Init() {
-	g.Apiclient = giphy.NewClient()
+func (g *Giphy) Init(api_key string) {
+	g.Apiclient = libgiphy.NewGiphy(api_key)
 }
 
-func (g *Giphy) GetGifURL(keywords []string) (string, error) {
-	// Load GIF
-	res, err := g.Apiclient.Search(keywords)
-	if err != nil {
-		fmt.Println(err)
+func (g *Giphy) GetGifURL(keywords string) (string, error) {
+    dataRandom, err := g.Apiclient.GetRandom(keywords)
+    if err != nil {
+        fmt.Println("error:", err)
 		return "", err
-	}
+    }
+    
+	gifUrl := dataRandom.Data.Images.Original.Mp4
+    fmt.Printf("GIF URL: %+v\n", gifUrl)
 
-	random := rand.Intn(len(res.Data))
-	url := res.Data[random].Images.Original.URL
-
-	return url, nil
+	return gifUrl, nil
 }

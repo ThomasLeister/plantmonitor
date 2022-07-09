@@ -12,6 +12,9 @@ mqtt:
   password: myapppassword
   topic: v3/myapp@ttn/devices/+/up
 
+giphy:
+  api_key: "mygiphykey"
+
 sensor:
   adc:
     raw_lower_bound: 0

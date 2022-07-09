@@ -22,6 +22,10 @@ type Config struct {
 		Topic string `yaml:"topic"`
 	} `yaml:"mqtt"`
 
+	Giphy struct {
+		ApiKey string `yaml:"api_key"`
+	}
+
 	Sensor struct {
 		Adc struct {
 			RawLowerBound int `yaml:"raw_lower_bound"`

@@ -1,133 +1,22 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"log"
 	"os"
-	"strconv"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
-	"gosrc.io/xmpp"
-	"gosrc.io/xmpp/stanza"
 
 	"thomas-leister.de/plantmonitor/configmanager"
 	"thomas-leister.de/plantmonitor/quantifier"
 	"thomas-leister.de/plantmonitor/reminder"
+	"thomas-leister.de/plantmonitor/giphy"
+	"thomas-leister.de/plantmonitor/xmppmanager"
+	"thomas-leister.de/plantmonitor/mqttmanager"
 )
 
 /* Global var for config*/
 var config configmanager.Config
 
-
-type MqttDecodedPayload struct {
-	MoistureRaw uint16 `json:"moisture_raw"`
-}
-
-type MqttUplinkMessage struct {
-	DecodedPayload MqttDecodedPayload `json:"decoded_payload"` //decoded_payload stores the already-decoded payload from TTN
-}
-
-type MqttPayload struct {
-	UplinkMessage MqttUplinkMessage `json:"uplink_message"`
-}
-
-var connectHandler mqtt.OnConnectHandler = func(client mqtt.Client) {
-	fmt.Printf("Connected to %s \n", config.Mqtt.Host)
-}
-
-var connectLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err error) {
-	fmt.Printf("Connect lost: %v \n", err)
-}
-
-func runMQTTListener(mqttMessageChannel chan mqtt.Message) {
-	opts := mqtt.NewClientOptions()
-
-	// Set options for connection
-	opts.AddBroker(fmt.Sprintf("mqtts://%s:%d", config.Mqtt.Host, config.Mqtt.Port))
-	opts.SetClientID("go_mqtt_client")
-	opts.SetUsername(config.Mqtt.Username)
-	opts.SetPassword(config.Mqtt.Password)
-
-	// Set callback functions
-	opts.SetDefaultPublishHandler(func(c mqtt.Client, m mqtt.Message) {
-		mqttMessageChannel <- m
-	})
-	opts.OnConnect = connectHandler
-	opts.OnConnectionLost = connectLostHandler
-
-	// Create client
-	client := mqtt.NewClient(opts)
-	if token := client.Connect(); token.Wait() && token.Error() != nil {
-		panic(token.Error())
-	}
-
-	// Subscribe to topic
-	token := client.Subscribe(config.Mqtt.Topic, 1, nil)
-	token.Wait()
-	fmt.Printf("Subscribed to topic %s \n", config.Mqtt.Topic)
-}
-
-func handleXmppMessage(s xmpp.Sender, p stanza.Packet) {
-	msg, ok := p.(stanza.Message)
-	if !ok {
-		_, _ = fmt.Fprintf(os.Stdout, "Ignoring packet: %T\n", p)
-		return
-	}
-
-	_, _ = fmt.Fprintf(os.Stdout, "Body = %s - from = %s\n", msg.Body, msg.From)
-	reply := stanza.Message{Attrs: stanza.Attrs{To: msg.From}, Body: msg.Body}
-	_ = s.Send(reply)
-}
-
-func xmppErrorHandler(err error) {
-	fmt.Println(err.Error())
-}
-
-func runXMPPClient(xmppMessageChannel chan string) {
-	xmppClientConfig := xmpp.Config{
-		TransportConfiguration: xmpp.TransportConfiguration{
-			Address: config.Xmpp.Host + ":" + strconv.Itoa(config.Xmpp.Port),
-		},
-		Jid:          config.Xmpp.Username,
-		Credential:   xmpp.Password(config.Xmpp.Password),
-		StreamLogger: nil,
-		Insecure:     false,
-	}
-
-	router := xmpp.NewRouter()
-	router.HandleFunc("message", handleXmppMessage)
-
-	client, err := xmpp.NewClient(&xmppClientConfig, router, xmppErrorHandler)
-	if err != nil {
-		log.Fatalf("%+v", err)
-	}
-
-	// If you pass the client to a connection manager, it will handle the reconnect policy
-	// for you automatically.
-	cm := xmpp.NewStreamManager(client, nil)
-	go cm.Run()
-
-	// Wait for a new message to send (listen on channel)
-	for xmppMessage := range xmppMessageChannel {
-		reply := stanza.Message{Attrs: stanza.Attrs{To: config.Xmpp.Recipient}, Body: xmppMessage}
-		err := client.Send(reply)
-		if err != nil {
-			fmt.Println("Error sending: ", err)
-		}
-	}
-}
-
-func parseMqttMessage(mqttMessage mqtt.Message) MqttPayload {
-	var mqttPayload MqttPayload
-
-	err := json.Unmarshal(mqttMessage.Payload(), &mqttPayload)
-	if err != nil {
-		panic(err)
-	}
-
-	return mqttPayload
-}
 
 func normalizeRawValue(rawValue int) int {
 	// Normalize range
@@ -147,7 +36,7 @@ func normalizeRawValue(rawValue int) int {
 func main() {
 	var err error
 	mqttMessageChannel := make(chan mqtt.Message)
-	xmppMessageChannel := make(chan string)
+	xmppMessageChannel := make(chan interface{})
 	var historyExists bool = false
 
 	fmt.Println(("Starting Plantmonitor ..."))
@@ -161,7 +50,19 @@ func main() {
 		fmt.Println("Config was read and parsed!")
 	}
 
-	// Init qauantifier
+	// Init xmppmanager 
+	xmppclient := xmppmanager.XmppClient{}
+	xmppclient.Init(&config)
+
+	// Init mqttmanager
+	mqttclient := mqttmanager.MqttClient{}
+	mqttclient.Init(&config)
+
+	// Init Giphy
+	giphyclient := giphy.Giphy{}
+	giphyclient.Init(config.Giphy.ApiKey)
+
+	// Init quantifier
 	myQuantifier := quantifier.Quantifier{}
 	myQuantifier.Init(&config)
 
@@ -170,15 +71,17 @@ func main() {
 	myReminder.Init(xmppMessageChannel)
 
 	// Start a new Goroutine which listens for new messages and sents them over the mqttMessageChannel
-	go runMQTTListener(mqttMessageChannel)
+	go mqttclient.RunMQTTListener(mqttMessageChannel)
 
 	// Start another Goroutine which sends XMPP messages
-	go runXMPPClient(xmppMessageChannel)
+	go xmppclient.RunXMPPClient(xmppMessageChannel)
+
+	
 
 	// Watch the channel and receive new messages
 	for mqttMessage := range mqttMessageChannel {
 		//fmt.Printf("Received message: %s from topic: %s\n", mqttMessage.Payload(), mqttMessage.Topic())
-		mqttDecodedPayload := parseMqttMessage(mqttMessage)
+		mqttDecodedPayload := mqttclient.ParseMqttMessage(mqttMessage)
 		moistureRaw := mqttDecodedPayload.UplinkMessage.DecodedPayload.MoistureRaw
 
 		// Normalize raw value to percentage (and invert value)
@@ -198,11 +101,11 @@ func main() {
 			if levelDirection == -1 {
 				// Send normalized value and level name / level message
 				fmt.Printf("Sending message: %s \n", currentLevel.ChatMessageDown)
-				xmppMessageChannel <- fmt.Sprintf("%s \n\nBodenfeuchte: %d %%", currentLevel.ChatMessageDown, normalizedMoistureValue)
+				xmppMessageChannel <- xmppmanager.XmppTextMessage(fmt.Sprintf("%s \n\nBodenfeuchte: %d %%", currentLevel.ChatMessageDown, normalizedMoistureValue))
 			} else if levelDirection == +1 {
 				// Send normalized value and level name / level message
 				fmt.Printf("Sending message: %s \n", currentLevel.ChatMessageUp)
-				xmppMessageChannel <- fmt.Sprintf("%s \n\nBodenfeuchte: %d %%", currentLevel.ChatMessageUp, normalizedMoistureValue)
+				xmppMessageChannel <- xmppmanager.XmppTextMessage(fmt.Sprintf("%s \n\nBodenfeuchte: %d %%", currentLevel.ChatMessageUp, normalizedMoistureValue))
 			} else if levelDirection == 0 {
 				// Level has not changed (or there has been no history)
 				fmt.Println("Level has not changed. Not sending any message (except for reminders).")
@@ -210,7 +113,11 @@ func main() {
 		} else {
 			// No history exists, yet (e.g. due to power-on). Just tell about the current state.
 			fmt.Printf("Sending message: %s \n", currentLevel.ChatMessageInitial)
-			xmppMessageChannel <- fmt.Sprintf("%s \n\nBodenfeuchte: %d %%", currentLevel.ChatMessageInitial, normalizedMoistureValue)
+			xmppMessageChannel <- xmppmanager.XmppTextMessage(fmt.Sprintf("%s \n\nBodenfeuchte: %d %%", currentLevel.ChatMessageInitial, normalizedMoistureValue))
+
+			// Send GIF: "I'm back"
+			gifUrl, _ := giphyclient.GetGifURL("I'm back")
+			xmppMessageChannel <- xmppmanager.XmppGifMessage(gifUrl)
 			historyExists = true
 		}
 
