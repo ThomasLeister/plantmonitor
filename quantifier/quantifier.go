@@ -19,10 +19,6 @@ type QuantificationLevel struct {
 	Start                int           // Quantification Level Start value (0 < value < 100)
 	End                  int           // ""
 	Name                 string        // Level name, such as "low", "normal", "high"
-	ChatMessageSteady    string        // Message to send if this level is steady
-	ChatMessageUp        string        // Message to send if this level is reached from a lower level
-	ChatMessageDown      string        // Message to send if this level is reached from a higher level
-	ChatMessageReminder  string        // Reminder chat message text
 	NotificationInterval time.Duration // Notification interval in seconds
 }
 
@@ -61,10 +57,6 @@ func (q *Quantifier) loadLevels(config *configmanager.Config) {
 		newLevel.Start = level.Start
 		newLevel.End = level.End
 		newLevel.Name = level.Name
-		newLevel.ChatMessageSteady = level.ChatMessageSteady
-		newLevel.ChatMessageUp = level.ChatMessageUp
-		newLevel.ChatMessageDown = level.ChatMessageDown
-		newLevel.ChatMessageReminder = level.ChatMessageReminder
 		newLevel.NotificationInterval = time.Duration(level.NotificationInterval) * time.Second
 
 		// Append new item to levels
@@ -125,16 +117,14 @@ func (q *Quantifier) EvaluateValue(moistureValue int) (int, QuantificationLevel,
 
 	// Save current value and level
 	q.Current = QuantificationResult{Value: moistureValue, QuantificationLevel: currentLevel}
+	log.Printf("Quantification result: moistureValue=%d QuantificationLevel=%s", q.Current.Value, q.Current.QuantificationLevel.Name)
 
 	// Check history: Has was level increased of decreased?
 	if q.HistoryExists() { // If history is not empty
 		// We have history
 		// Check if level has changed compared to previous
-		if q.Current.QuantificationLevel.Name == q.History.QuantificationLevel.Name {
-			// Level has not changed
-			levelDirection = 0
-		} else {
-			// Level has changed. Up or down? Check old value
+		if q.Current.QuantificationLevel.Name != q.History.QuantificationLevel.Name {
+			// Level has changed. Up or down?
 			if q.Current.Value > q.History.Value {
 				levelDirection = 1
 			} else if q.Current.Value < q.History.Value {
@@ -142,7 +132,7 @@ func (q *Quantifier) EvaluateValue(moistureValue int) (int, QuantificationLevel,
 			}
 		}
 	} else {
-		// We do not have history, yet. Let's say there has not been a change in value... and save the current value to history
+		// We do not have history, yet.
 		log.Println("We do not have quantifier history, yet! Assuming levelDirection=0 (steady)")
 	}
 

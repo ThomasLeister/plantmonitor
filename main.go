@@ -33,6 +33,8 @@ var config configManagerPkg.Config
 
 func main() {
 	var err error
+	var quantifierHistoryExists = false
+
 	mqttMessageChannel := make(chan mqtt.Message)
 	xmppMessageOutChannel := make(chan interface{})
 	xmppMessageInChannel := make(chan xmppManagerPkg.XmppInMessage)
@@ -132,6 +134,9 @@ func main() {
 		sensor.UpdateCurrentValue(int(moistureRaw))
 		log.Printf("Raw sensor value: %d  |  Normalized value: %d %% \n", moistureRaw, sensor.Normalized.Current.Value)
 
+		// Save state before first value is evaluated, because then history will exist for sure ;)
+		quantifierHistoryExists = quantifier.HistoryExists()
+
 		// Put current sensor value into quantifier
 		levelDirection, currentLevel, err := quantifier.EvaluateValue(sensor.Normalized.Current.Value)
 		if err != nil {
@@ -144,7 +149,7 @@ func main() {
 		 *     - on level change or
 		 *     - if no history exists (first sensor value was read / quantified)
 		 */
-		if (levelDirection != 0) || (!quantifier.HistoryExists()) {
+		if (levelDirection != 0) || (!quantifierHistoryExists) {
 			// Send message via messenger
 			messenger.ResolveLevelToMessage(sensor.Normalized.Current.Value, levelDirection, currentLevel)
 
@@ -154,8 +159,6 @@ func main() {
 			} else {
 				reminder.Stop() // Do nothing. One message is enough. Stop existing reminders.
 			}
-		} else {
-			log.Println("Quantification level did not change and we have quantification history. No need to notify.")
 		}
 	}
 

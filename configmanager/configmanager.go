@@ -69,10 +69,6 @@ type Config struct {
 		Start                int    `yaml:"start"`
 		End                  int    `yaml:"end"`
 		Name                 string `yaml:"name"`
-		ChatMessageSteady    string `yaml:"chat_message_steady"`         // Reference string to map in "messages" section
-		ChatMessageUp        string `yaml:"chat_message_up,omitempty"`   // Reference string to map in "messages" section
-		ChatMessageDown      string `yaml:"chat_message_down,omitempty"` // Reference string to map in "messages" section
-		ChatMessageReminder  string `yaml:"chat_message_reminder"`       // Reference string to map in "messages" section
 		NotificationInterval int    `yaml:"notification_interval"`
 	} `yaml:"levels"`
 
