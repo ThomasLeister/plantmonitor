@@ -41,29 +41,54 @@ The `plantmonitor` binary will contain the application.
 
 ## Installing Plantmonitor
 
-* Create User folder etc
-* Copy config.yaml and lang_de.yaml
-* install Systemd service in dist/plantmonitor.service)
+Starting as `root`user, take the following steps to install Plantmonitor manually:
+
+Create a new user account on your system:
+
+    adduser --disabled-login --disabled-password plantmonitor
+
+Change to the new account:
+
+    su - plantmonitor
+
+Upload the `plantmonitor` binary, `config.example.yaml` and `lang_de.yaml` _(or any other language file)_ to `/home/plantmonitor/`.
+
+Switch back to the root user:
+
+    exit
+
+and create a new Systemd service file at `/etc/systemd/system/plantmonitor.service` by copying the original file `dist/plantmonitor.service` from this repository. Make sure the paths in the service file are correct and enable the new service:
+
+    systemctl daemon-reload
+    systemctl enable plantmonitor.service
 
 
 ## Configuring Plantmonitor
 
-(TBD)
-* Copy config.example.yaml to config.yaml
-* Set MQTT, XMPP, Giphy credentials
-* Define levels
-* Set language
-* Define your own language file if needed.
+
+Rename `config.example.yaml` to `config.yaml` and adapt the following settings:
+
+* MQTT
+* XMPP
+* Giphy _(requires Giphy API key. Developer key is sufficient.)_
+
+You can also change the level thresholds and more settings, but I'd suggest to leave that for later.
+
+_Note: YAML configuration syntax is very picky with Tabs vs. Spaces! Use spaces only for identation!_
 
 
 ## Running Plantmonitor
 
+You can now start Plantmonitor and check the logs:
+
     systemctl start plantmonitor
     journalctl -u plantmonitor -f
 
+No errors should appear in the log. You can check the output by either waiting for sensor updates or sending the plant's XMPP account some messages, e.g. "help". 
 
-Reload daemon after config change (levels and messages):
+In case you fine-tuned some settings regarding level thresholds (`config.yaml`) or chat messages (`lang_de.yaml`) there is not need to restart the full backend and lose all the sensor history. You can easily load the new values by running:
 
     systemctl reload plantmonitor
 
+_(note: This will only affect chat messages and level definitions. The change of other settings such as MQTT and XMPP settings requirea full restart via `systemctl restart plantmonitor`)._
 
