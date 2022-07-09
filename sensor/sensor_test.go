@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	configManagerPkg "thomas-leister.de/plantmonitor/configmanager"
+	_ "thomas-leister.de/plantmonitor/testing_init"
 )
 
 /* Global var for config*/
@@ -23,7 +24,7 @@ func TestNormalizeRawValue(t *testing.T) {
 	}
 
 	// Read config
-	config, err = configManagerPkg.ReadConfig("../config.yaml")
+	config, err = configManagerPkg.ReadConfig("./")
 	if err != nil {
 		log.Fatal("Could not parse config:", err)
 	} else {

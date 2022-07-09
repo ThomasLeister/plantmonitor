@@ -81,7 +81,7 @@ type Config struct {
 	Messages Messages // Not part of config.yaml, but language config will be put here.
 }
 
-func ReadConfig(configFilePath string) (Config, error) {
+func ReadConfig(configDirPath string) (Config, error) {
 	config := Config{}
 
 	log.Println("Initializing configmanager ...")
@@ -89,7 +89,7 @@ func ReadConfig(configFilePath string) (Config, error) {
 	/*
 	 * Parse main config file config.yaml
 	 */
-	configFile, err := os.Open(configFilePath)
+	configFile, err := os.Open(configDirPath + "/config.yaml")
 	if err != nil {
 		return config, err
 	}
@@ -105,7 +105,7 @@ func ReadConfig(configFilePath string) (Config, error) {
 	 * Parse language config file lang_<lang>.yaml
 	 */
 
-	langFile, err := os.Open("lang_" + config.LangCode + ".yaml")
+	langFile, err := os.Open(configDirPath + "/lang_" + config.LangCode + ".yaml")
 	if err != nil {
 		return config, err
 	}

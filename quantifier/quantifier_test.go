@@ -6,6 +6,7 @@ import (
 
 	configManagerPkg "thomas-leister.de/plantmonitor/configmanager"
 	sensorPkg "thomas-leister.de/plantmonitor/sensor"
+	_ "thomas-leister.de/plantmonitor/testing_init"
 )
 
 // Thresholds according to example config:
@@ -43,7 +44,7 @@ func TestEvaluateValue(t *testing.T) {
 	var previousSensorDir int
 
 	// Read config
-	config, err = configManagerPkg.ReadConfig("../config.yaml")
+	config, err = configManagerPkg.ReadConfig("./")
 	if err != nil {
 		log.Fatal("Could not parse config:", err)
 	} else {
