@@ -9,7 +9,6 @@ package quantifier
 import (
 	"fmt"
 	"log"
-	"strconv"
 	"time"
 
 	"thomas-leister.de/plantmonitor/configmanager"
@@ -67,13 +66,10 @@ func (q *Quantifier) Init(config *configmanager.Config, sensor *sensor.Sensor) {
 		q.QuantificationLevels = append(q.QuantificationLevels, newLevel)
 	}
 
-	// Read values back
-	fmt.Println("Available quantification levels:")
-	fmt.Println("---------------------------------------------")
-	for _, level := range q.QuantificationLevels {
-		fmt.Printf("|" + level.Name + " | " + strconv.Itoa(level.Start) + " | " + strconv.Itoa(level.End) + " |\n")
-	}
-	fmt.Println("---------------------------------------------")
+	// Output table showing quantification levels and thresholds
+	fmt.Printf("\nAvailable quantification levels:\n\n")
+	printLevelTable(&q.QuantificationLevels)
+	fmt.Printf("\n")
 }
 
 /*
