@@ -112,7 +112,7 @@ func main() {
 		 *     - on level change or
 		 *     - if no history exists (first sensor value was read / quantified)
 		 */
-		if levelDirection != 0 || !quantifier.HistoryExists() {
+		if (levelDirection != 0) || (!quantifier.HistoryExists()) {
 			// Send message via messenger
 			messenger.ResolveLevelToMessage(sensor.Normalized.Current.Value, levelDirection, currentLevel)
 
