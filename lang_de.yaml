@@ -1,0 +1,55 @@
+online: 
+  - "Ich bin wieder zurück!"
+  - "Da gab es wohl eine Unterbrechung. Ich bin wieder online :)"
+
+levels:
+  low_steady:
+    messages:
+      - "Bitte gieß' mich! Ich vertrockne! 😵"
+    gif_keywords: "dying death"
+  low_down:
+    messages: 
+      - "Ich könnte etwas Wasser brauchen. Mein Mund ist so trocken 😧"
+    gif_keywords: "dying death"
+  low_reminder:
+    messages: 
+      - "Hallooo!? Vergiss mich nicht! Ich vertrockne! ☠️"
+    gif_keywords: "dying death"
+
+  normal_steady:
+    messages:
+      - "Mir geht's gut. 🙂"
+      - "Ich fühl mich gut. 🙂"
+      - "Alles klar bei mir! 🙂"
+    gif_keywords: "good fine"
+  normal_up:
+    messages: 
+      - "Ich fühle mich wieder gut. Danke! 😌"
+    gif_keywords: "relieved recovered satisfied"
+  normal_down:
+    messages:
+      - "Puuh! Das war ein bisschen viel Wasser, aber jetzt geht es wieder. 🥴"
+    gif_keywords: "relieved recovered"
+
+
+  high_steady:
+    messages: 
+      - "Ich habe zu viel Wasser! 🏊‍♂️"
+    gif_keywords: "dying drowning"
+  high_up:
+    messages: 
+      - "Da hast du's aber gut gemeint. Ist ziemlich nass hier. 🥵"
+    gif_keywords: "dying drowning"
+  high_reminder:
+    messages:
+      - "... immer noch ziemlich feucht hier... etwas trockener wäre mir lieber. 😕"
+    gif_keywords: "dying drowning"
+
+answers:
+  current_state: "Hey! Hier sind die aktuellen Daten über mich:\nBodenfeuchte: {{.SensorValue}} %\nZeit: {{.LastUpdated.Format \"Jan 02, 2006 15:04:05 CET\"}}"
+  unknown_command: "Ich habe dich leider nicht verstanden. Schicke mir \"help\", um herauszufinden, welche Kommandos ich verstehe."
+  available_commands: "Folgende Kommandos werden unterstützt: \n- \"Wie gehts's dir?\""
+  sensor_data_unavailable: "Leider sind noch keine Sensordaten verfügbar. Bitte versuche es später nocheinmal."
+
+warnings:
+  sensor_offline: "Der Sensor hat seit {{.Timeout}} keinen neuen Wert mehr geschickt. Bitte kontrolliere den Sensor."

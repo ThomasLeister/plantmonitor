@@ -75,23 +75,42 @@ type Config struct {
 		NotificationInterval int    `yaml:"notification_interval"`
 	} `yaml:"levels"`
 
-	Messages Messages `yaml:"messages"`
+	LangCode string `yaml:"lang_code"`
+
+	Messages Messages // Not part of config.yaml, but language config will be put here.
 }
 
-func ReadConfig(configPath string) (Config, error) {
+func ReadConfig(configFilePath string) (Config, error) {
 	config := Config{}
 
-	// Open config file
-	file, err := os.Open(configPath)
+	/*
+	 * Parse main config file config.yaml
+	 */
+	configFile, err := os.Open(configFilePath)
 	if err != nil {
 		return config, err
 	}
-	defer file.Close()
+	defer configFile.Close()
 
-	// Init new YAML decode
-	d := yaml.NewDecoder(file)
-	// Start YAML decoding from file
-	if err := d.Decode(&config); err != nil {
+	// Decode config file
+	configDecoder := yaml.NewDecoder(configFile)
+	if err := configDecoder.Decode(&config); err != nil {
+		return config, err
+	}
+
+	/*
+	 * Parse language config file lang_<lang>.yaml
+	 */
+
+	langFile, err := os.Open("lang_" + config.LangCode + ".yaml")
+	if err != nil {
+		return config, err
+	}
+	defer langFile.Close()
+
+	// Decode language file
+	langFileDecoder := yaml.NewDecoder(langFile)
+	if err := langFileDecoder.Decode(&config.Messages); err != nil {
 		return config, err
 	}
 
