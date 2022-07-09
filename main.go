@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: MIT
- * (valid for all sub-packages)
+ * (valid for all sub-packages in original repository)
  */
 
 package main
