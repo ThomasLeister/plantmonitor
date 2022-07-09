@@ -140,7 +140,7 @@ func main() {
 		// Put current sensor value into quantifier
 		levelDirection, currentLevel, err := quantifier.EvaluateValue(sensor.Normalized.Current.Value)
 		if err != nil {
-			log.Panic("Error happended during evaluation.")
+			log.Panicf("Error happended during evaluation: %s", err)
 			continue
 		}
 
