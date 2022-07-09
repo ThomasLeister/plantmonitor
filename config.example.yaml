@@ -31,25 +31,16 @@ levels:
   - name: low
     start: 0 
     end: 30
-    chat_message_steady: low_steady
-    chat_message_down: low_down
-    chat_message_reminder: low_reminder
     notification_interval: 3600
 
   - name: normal
     start: 31
     end: 66
-    chat_message_steady: normal_steady
-    chat_message_up: normal_up
-    chat_message_down: normal_down
     notification_interval: 0
 
   - name: high
     start: 67
     end: 100
-    chat_message_steady: high_steady
-    chat_message_up: high_up
-    chat_message_reminder: high_reminder
     notification_interval: 7200
 
 lang_code: "de"    # ISO 639-1 Code of language (needs to be supported by existing lang_<lang_code>.yaml file!)
