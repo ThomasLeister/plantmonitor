@@ -6,16 +6,17 @@
 package configmanager
 
 import (
-	"gopkg.in/yaml.v2"
 	"os"
+
+	"gopkg.in/yaml.v2"
 )
 
 type Config struct {
 	Xmpp struct {
-		Host      string `yaml:"host"`
-		Port      int    `yaml:"port"`
-		Username  string `yaml:"username"`
-		Password  string `yaml:"password"`
+		Host       string   `yaml:"host"`
+		Port       int      `yaml:"port"`
+		Username   string   `yaml:"username"`
+		Password   string   `yaml:"password"`
 		Recipients []string `yaml:"recipients"`
 	} `yaml:"xmpp"`
 
@@ -33,8 +34,8 @@ type Config struct {
 
 	Sensor struct {
 		Adc struct {
-			RawLowerBound int `yaml:"raw_lower_bound"`
-			RawUpperBound int `yaml:"raw_upper_bound"`
+			RawLowerBound  int `yaml:"raw_lower_bound"`
+			RawUpperBound  int `yaml:"raw_upper_bound"`
 			RawNoiseMargin int `yaml:"raw_noise_margin"`
 		} `yaml:"adc"`
 	} `yaml:"sensor"`
@@ -47,7 +48,6 @@ type Config struct {
 		ChatMessageUp        string `yaml:"chat_message_up"`
 		ChatMessageDown      string `yaml:"chat_message_down"`
 		ChatMessageReminder  string `yaml:"chat_message_reminder"`
-		Urgency              string `yaml:"urgency"`
 		NotificationInterval int    `yaml:"notification_interval"`
 	} `yaml:"levels"`
 }

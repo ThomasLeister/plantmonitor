@@ -15,10 +15,38 @@ mqtt:
   topic: v3/myapp@ttn/devices/+/up
 
 giphy:
-  api_key: "mygiphykey"
+  api_key: "<mygiphykey>"
 
 sensor:
   adc:
     raw_lower_bound: 0
     raw_upper_bound: 3612
     raw_noise_margin: 50
+
+levels:
+  - name: low
+    start: 0 
+    end: 30
+    chat_message_steady: "I'm having too little water"
+    chat_message_up: ""
+    chat_message_down: "Please water me. I'feeling feel thirsty. :("
+    chat_message_reminder: "Don't forget me! I'm dying of thirst!"
+    notification_interval: 3600
+
+  - name: normal
+    start: 31
+    end: 66
+    chat_message_steady: "I'm feeling fine!"
+    chat_message_up: "I'm feeling good, again. Thanks!"
+    chat_message_down: "Wow. There was a lot of moisture. I'm feeling fine, again."
+    chat_message_reminder: ""
+    notification_interval: 0
+
+  - name: high
+    start: 67
+    end: 100
+    chat_message_steady: "I'm having too much water!"
+    chat_message_up: "You gave too much water. Give me my floaty hoop!"
+    chat_message_down: ""
+    chat_message_reminder: "It's still quite wet here. Could you maybe dry me a little?"
+    notification_interval: 7200

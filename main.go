@@ -88,8 +88,8 @@ func main() {
 		// Send message via messenger
 		messenger.ResolveLevelToMessage(sensor.Normalized.Current.Value, levelDirection, currentLevel)
 
-		// Check for urgency and set reminder accordingly
-		if currentLevel.Urgency != quantifierPkg.UrgencyLow {
+		// Check reminder period and reminder timer accordingly
+		if currentLevel.NotificationInterval != 0 {
 			reminder.Set(currentLevel)
 		} else {
 			reminder.Stop() // Do nothing. One message is enough. Stop existing reminders.

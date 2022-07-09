@@ -16,14 +16,6 @@ import (
 	"thomas-leister.de/plantmonitor/sensor"
 )
 
-type Urgency int64
-
-const (
-	UrgencyLow    Urgency = iota // Low urgency = Do not remember, e.g. it level is normal.
-	UrgencyMedium                // Remember sometimes
-	UrgencyHigh                  // Remember in short intervals, critical state.
-)
-
 type QuantificationLevel struct {
 	Start                int           // Quantification Level Start value (0 < value < 100)
 	End                  int           // ""
@@ -32,7 +24,6 @@ type QuantificationLevel struct {
 	ChatMessageUp        string        // Message to send if this level is reached from a lower level
 	ChatMessageDown      string        // Message to send if this level is reached from a higher level
 	ChatMessageReminder  string        // Reminder chat message text
-	Urgency              Urgency       // Whether to remember humans of the (bad) state, in case this is a bad state. The higher the urgency, the higher the remember interval.
 	NotificationInterval time.Duration // Notification interval in seconds
 }
 
@@ -70,14 +61,6 @@ func (q *Quantifier) Init(config *configmanager.Config, sensor *sensor.Sensor) {
 		newLevel.ChatMessageDown = level.ChatMessageDown
 		newLevel.ChatMessageReminder = level.ChatMessageReminder
 		newLevel.NotificationInterval = time.Duration(level.NotificationInterval) * time.Second
-
-		if level.Urgency == "low" {
-			newLevel.Urgency = UrgencyLow
-		} else if level.Urgency == "medium" {
-			newLevel.Urgency = UrgencyMedium
-		} else if level.Urgency == "high" {
-			newLevel.Urgency = UrgencyHigh
-		}
 
 		// Append new item to levels
 		q.QuantificationLevels = append(q.QuantificationLevels, newLevel)
@@ -132,7 +115,7 @@ func (q *Quantifier) EvaluateValue(moistureValue int) (int, QuantificationLevel,
 		return levelDirection, QuantificationLevel{}, fmt.Errorf("could not evaluate new moisture Value: %s", err)
 	}
 
-	// Check history: Has value increased or decreased?
+	// Check history: Has was level increased of decreased?
 	if (q.QuantificationHistory != QuantificationHistory{}) {
 		// We have history
 		// Check if level has changed compared to previous
