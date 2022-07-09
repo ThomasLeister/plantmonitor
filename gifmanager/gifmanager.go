@@ -1,3 +1,8 @@
+/* 
+ * GifManager:
+ * Offers functions to retrieve GIF URLs from an online GIF platform, such as Giphy.
+ */
+
 package gifmanager
 
 import (

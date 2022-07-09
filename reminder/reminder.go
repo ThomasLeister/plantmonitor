@@ -1,3 +1,8 @@
+/* 
+ * Reminder: 
+ * Implements goroutines with timer for reminding of cricital moisture levels
+ */
+
 package reminder
 
 import (

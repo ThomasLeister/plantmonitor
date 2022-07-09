@@ -1,6 +1,6 @@
 /* 
  * Messenger package:
- * Translates moisture levels into text / GIF messages to send via XMPP.
+ * Translates moisture levels into text / GIF messages and sends them to XmppManager
  */ 
 package messenger 
 

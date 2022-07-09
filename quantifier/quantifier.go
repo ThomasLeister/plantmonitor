@@ -1,3 +1,9 @@
+/*
+ * Quantifier:
+ * Takes normalized moisture values and translates them into discrete moisture levels
+ * also reports direction of moisture level history. (up, steady, down)
+ */
+
 package quantifier
 
 import (

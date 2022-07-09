@@ -1,3 +1,10 @@
+/*
+ * XmppManager: Manages XMPP connection and 
+ * offers xmppMessageChannel for sending various types of XMPP Messages:
+ * 		- XmppTextMessage or
+ * 		- XmppGifMessage
+ */
+
 package xmppmanager 
 
 import (

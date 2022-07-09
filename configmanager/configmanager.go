@@ -1,3 +1,8 @@
+/*
+ * Configmanager:
+ * Reads configuration from YAML config file
+ */
+
 package configmanager
 
 import (
