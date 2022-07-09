@@ -1,0 +1,37 @@
+name: Go
+
+on:
+  push:
+    branches: 
+    - '**'
+  pull_request:
+    branches: [ master, develop ]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.16
+
+    - name: Build
+      #run: go build
+      run: /bin/sh build-release.sh
+
+    - name: Test
+      run: go test -v ./...
+
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v3.0.0
+      with:
+        # Artifact name
+        name: plantmonitor_linux_x86-64
+        # A file, directory or wildcard pattern that describes what to upload
+        path: plantmonitor
+        if-no-files-found: error
+        retention-days: 0
