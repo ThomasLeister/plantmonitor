@@ -10,6 +10,8 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"gosrc.io/xmpp"
 	"gosrc.io/xmpp/stanza"
+
+	"thomas-leister.de/plantmonitor/quantifier"
 )
 
 const MQTT_SERVER = "eu1.cloud.thethings.network"
@@ -135,10 +137,17 @@ func parseMqttMessage(mqttMessage mqtt.Message) MqttPayload {
 }
 
 func main() {
+	var quantificationLevel quantifier.QuantificationLevel
+	var err error
+
 	mqttMessageChannel := make(chan mqtt.Message)
 	xmppMessageChannel := make(chan string)
 
 	fmt.Println(("Starting Plantmonitor ..."))
+
+	// Init qauantifier
+	myQuantifier := quantifier.Quantifier{}
+	myQuantifier.Init()
 
 	// Start a new Goroutine which listens for new messages and sents them over the mqttMessageChannel
 	go runMQTTListener(mqttMessageChannel)
@@ -153,7 +162,15 @@ func main() {
 
 		moistureRaw := mqttDecodedPayload.UplinkMessage.DecodedPayload.MoistureRaw
 		fmt.Printf("Moisture raw value: %d\n", moistureRaw)
-		xmppMessageChannel <- "New moisture value: " + strconv.Itoa(int(moistureRaw))
+		//xmppMessageChannel <- "New moisture value: " + strconv.Itoa(int(moistureRaw))
+
+		// Put value into quantifier
+		quantificationLevel, err = myQuantifier.Quantify(int(moistureRaw))
+		if err != nil {
+			fmt.Println("Error at quantification:", err)
+		}
+
+		fmt.Printf("This values has been quantified as: %s \n", quantificationLevel.Name)
 	}
 
 	fmt.Println("Plant monitor failed. Exiting ...")
