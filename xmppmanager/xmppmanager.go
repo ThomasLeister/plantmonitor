@@ -26,7 +26,7 @@ type XmppClient struct {
 	Port      int
 	Username  string
 	Password  string
-	Recipient string
+	Recipients []string
 }
 
 func (x *XmppClient) HandleXmppMessage(s xmpp.Sender, p stanza.Packet) {
@@ -50,7 +50,7 @@ func (x *XmppClient) Init(config *configmanager.Config) error {
 	x.Port = config.Xmpp.Port
 	x.Username = config.Xmpp.Username
 	x.Password = config.Xmpp.Password
-	x.Recipient = config.Xmpp.Recipient
+	x.Recipients = config.Xmpp.Recipients
 
 	return nil
 }
@@ -88,14 +88,17 @@ func (x *XmppClient) RunXMPPClient(xmppMessageChannel chan interface{}) {
 		case XmppTextMessage:
 			log.Println("XMPP: Sending a text message")
 			tm := xmppMessage.(XmppTextMessage)
-			xmppMessageStanza = stanza.Message{Attrs: stanza.Attrs{To: x.Recipient}, Body: string(tm)}
+			xmppMessageStanza = stanza.Message{
+				//Attrs: stanza.Attrs{To: x.Recipient}, 
+				Body: string(tm),
+			}
 
 		case XmppGifMessage:
 			log.Println("XMPP: Sending a GIF message")
 			gm := xmppMessage.(XmppGifMessage)
 
 			xmppMessageStanza = stanza.Message{
-				Attrs: stanza.Attrs{To: x.Recipient},
+				//Attrs: stanza.Attrs{To: x.Recipient},
 				Extensions: []stanza.MsgExtension{
 					stanza.OOB{
 						URL:  string(gm),
@@ -109,9 +112,14 @@ func (x *XmppClient) RunXMPPClient(xmppMessageChannel chan interface{}) {
 			continue // Quit this for() round
 		}
 
-		err := client.Send(xmppMessageStanza)
-		if err != nil {
-			log.Println("ERROR: Could not send stanza: ", err)
+		// For each recipient: Set recipient and send message
+		for _, recipient := range x.Recipients {
+			xmppMessageStanza.Attrs = stanza.Attrs{To: recipient}
+
+			err := client.Send(xmppMessageStanza)
+			if err != nil {
+				log.Println("ERROR: Could not send stanza to: ", err)
+			}
 		}
 	}
 }

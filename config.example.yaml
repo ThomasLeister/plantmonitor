@@ -3,7 +3,9 @@ xmpp:
   port: 5222
   username: username@my.xmpp.host
   password: password
-  recipient: otheruser@my.xmpp.host
+  recipients: 
+    - recipient1@my.xmpp.host
+    - recipient2@my.xmpp.host
 
 mqtt:
   host: eu1.cloud.thethings.network

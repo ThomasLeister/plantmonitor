@@ -16,7 +16,7 @@ type Config struct {
 		Port      int    `yaml:"port"`
 		Username  string `yaml:"username"`
 		Password  string `yaml:"password"`
-		Recipient string `yaml:"recipient"`
+		Recipients []string `yaml:"recipients"`
 	} `yaml:"xmpp"`
 
 	Mqtt struct {
