@@ -94,6 +94,80 @@ func (q *Quantifier) Quantify(value int, hysteresisMargin int) (QuantificationLe
 }
 
 /*
+ * New matchLevels() function
+ * Finds levels that match the current sensor value.
+ * Either with overlap of levels (for hysteresis, "blurry mode") or without overlaps ("sharp mode")
+ * Level of overlap is defined by hysteresisMargin.
+ * hysteresisMargin = 0 	=> No overlap
+ * hysteresisMargin = 2 	=> Overlap by 2 in each direction
+ *
+ * Returns zero, one or more levels that match the value.
+ */
+
+func (q *Quantifier) matchLevels(value int, hysteresisMargin int) []QuantificationLevel {
+	var matchedLevels []QuantificationLevel
+
+	// Loop through all levels and find matching ones
+	for _, quantificationLevel := range q.QuantificationLevels {
+		if (value >= quantificationLevel.Start-hysteresisMargin) && (value <= quantificationLevel.End+hysteresisMargin) {
+			matchedLevels = append(matchedLevels, quantificationLevel)
+		}
+	}
+
+	return matchedLevels
+}
+
+/*
+ * New Quantify implementation
+ */
+
+func (q *Quantifier) QuantifyNew(value int, hysteresisMargin int) (QuantificationLevel, error) {
+	var previousLevelMatched = false
+
+	// First step: matchLevels using "blurry mode" (margin != 0) and check whether we're in an ambivalent range (two or more levels match)
+	matchedLevels := q.matchLevels(value, hysteresisMargin)
+
+	switch len(matchedLevels) {
+	case 0:
+		// No level could be matched. Value out or range
+		return QuantificationLevel{}, fmt.Errorf("cannot assign quantification level. Value out of range")
+	case 1:
+		// Clear situation: This value can only be on this single level
+		return matchedLevels[0], nil
+	default:
+		// We need further investigation. Multiple levels match the value.
+
+		// Check if previous level is amongst matched levels
+		for _, matchedLevel := range matchedLevels {
+			if q.History.QuantificationLevel.Name == matchedLevel.Name {
+				previousLevelMatched = true
+				break
+			}
+		}
+
+		if previousLevelMatched {
+			// If previous level is amongst matching levels, just keep that level (=> Hysteresis applied)
+			return q.History.QuantificationLevel, nil
+		} else {
+			// If previous level is _not_ amongst matching levels, we have no choise and need to apply "sharp" matching. (=> No hysteresis applied)
+			matchedLevels = q.matchLevels(value, 0)
+
+			// We expect only one level to be returned
+			if len(matchedLevels) == 0 {
+				// no level could be identified
+				return QuantificationLevel{}, fmt.Errorf("cannot assign quantification level. Value out of range")
+			} else if len(matchedLevels) > 1 {
+				// Multiple levels could be identified. Overlap detected without blurry match! Something must be wrong in config.
+				return QuantificationLevel{}, fmt.Errorf("multiple levels are matching. Overlap in level configuration?")
+			} else {
+				// A single suitable level was found. Return it.
+				return matchedLevels[0], nil
+			}
+		}
+	}
+}
+
+/*
  * Evaluate new value:
  * - Quantify new value (which level does the new value correspond to?)
  * - Check history: Has the level increased or decreased since last time?
@@ -105,14 +179,11 @@ func (q *Quantifier) EvaluateValue(moistureValue int) (int, QuantificationLevel,
 	var levelDirection int = 0
 	var err error
 
-	// Calculate hysteresis margin. Its polarity depends on the direction of normalized sensor values. It's absolute value by settings.
-	hysteresisMargin := q.Sensor.Normalized.Current.Direction * (q.Sensor.Normalized.NoiseMargin / 2)
-	log.Printf("Sensor direction: %d | Hysteresis threshold shift: %d \n", q.Sensor.Normalized.Current.Direction, hysteresisMargin)
-
-	// Quantify current value and check which level we reached
-	currentLevel, err := q.Quantify(moistureValue, hysteresisMargin)
+	// Calc hysteresis margin for hysteresis / "blurry" matching of levels
+	hysteresisMargin := (q.Sensor.Normalized.NoiseMargin / 2)
+	currentLevel, err := q.QuantifyNew(moistureValue, hysteresisMargin)
 	if err != nil {
-		return levelDirection, QuantificationLevel{}, fmt.Errorf("could not evaluate new moisture Value: %s", err)
+		return levelDirection, QuantificationLevel{}, fmt.Errorf("could not evaluate new moisture value: %s", err)
 	}
 
 	// Save current value and level
@@ -120,9 +191,8 @@ func (q *Quantifier) EvaluateValue(moistureValue int) (int, QuantificationLevel,
 	log.Printf("Quantification result: moistureValue=%d QuantificationLevel=%s", q.Current.Value, q.Current.QuantificationLevel.Name)
 
 	// Check history: Has was level increased of decreased?
-	if q.HistoryExists() { // If history is not empty
-		// We have history
-		// Check if level has changed compared to previous
+	if q.HistoryExists() {
+		// We have history: Check if level has changed compared to previous
 		if q.Current.QuantificationLevel.Name != q.History.QuantificationLevel.Name {
 			// Level has changed. Up or down?
 			if q.Current.Value > q.History.Value {
