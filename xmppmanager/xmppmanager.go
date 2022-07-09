@@ -78,6 +78,11 @@ func (x *XmppClient) RunXMPPClient(xmppMessageChannel chan interface{}) {
 
 		// Find out stanza type (TextMessage or GifMessage)
 		switch xmppMessage.(type) {
+		case XmppTextMessage:
+			fmt.Println("XMPP: Sending a text message")
+			tm := xmppMessage.(XmppTextMessage)
+			xmppMessageStanza = stanza.Message{Attrs: stanza.Attrs{To: x.Recipient}, Body: string(tm)}
+
 		case XmppGifMessage:
 			fmt.Println("XMPP: Sending a GIF message")
 			gm := xmppMessage.(XmppGifMessage)
@@ -87,15 +92,10 @@ func (x *XmppClient) RunXMPPClient(xmppMessageChannel chan interface{}) {
 				Extensions: []stanza.MsgExtension{
 					stanza.OOB{
 						URL: string(gm),
-						Desc: "meme",
+						Desc: "GIF with meme",
 					},
 				},
 			}
-
-		case XmppTextMessage:
-			fmt.Println("XMPP: Sending a text message")
-			tm := xmppMessage.(XmppTextMessage)
-			xmppMessageStanza = stanza.Message{Attrs: stanza.Attrs{To: x.Recipient}, Body: string(tm)}
 		
 		default:
 			fmt.Println("ERROR: Type of message to send is unknown. Send one of XmppTextMessage or XmppGifMessage!")
