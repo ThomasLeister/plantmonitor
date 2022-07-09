@@ -10,6 +10,7 @@ import (
 	"math/rand"
 	"strconv"
 	"strings"
+	"time"
 
 	"thomas-leister.de/plantmonitor/configmanager"
 	"thomas-leister.de/plantmonitor/gifmanager"
@@ -44,8 +45,14 @@ func (m *Messenger) ResponderLoop() {
 				// If we have valid data, send them
 				log.Println("Sending health info")
 				if m.Sensor.Normalized.History.Valid {
+					sensorValueString := strconv.Itoa(m.Sensor.Normalized.Current.Value)
+					lastUpdatedString := m.Sensor.LastUpdated.Format(time.RFC1123)
+
 					// Respond via out channel
-					m.XmppMessageOutChannel <- xmppmanager.XmppTextMessage{Recipients: recipients, Text: "Hey! Hier die aktuellen Daten über mich:\n" + "Bodenfeuchte: " + strconv.Itoa(m.Sensor.Normalized.Current.Value) + " %"}
+					m.XmppMessageOutChannel <- xmppmanager.XmppTextMessage{
+						Recipients: recipients,
+						Text:       "Hey! Hier die aktuellen Daten über mich:\n" + "Bodenfeuchte: " + sensorValueString + " %\nZeit: " + lastUpdatedString,
+					}
 				} else {
 					m.XmppMessageOutChannel <- xmppmanager.XmppTextMessage{Recipients: recipients, Text: "Leider habe ich noch keine aktuellen Sensordaten für dich."}
 				}

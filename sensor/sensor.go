@@ -7,6 +7,7 @@ package sensor
 
 import (
 	"log"
+	"time"
 
 	"thomas-leister.de/plantmonitor/configmanager"
 )
@@ -28,6 +29,7 @@ type Sensor struct {
 		}
 		NoiseMargin int
 	}
+	LastUpdated time.Time // Time of last sensor value update
 }
 
 func (s *Sensor) Init(config *configmanager.Config) {
@@ -65,6 +67,9 @@ func (s *Sensor) UpdateCurrentValue(currentRaw int) {
 
 	// History is valid after 1st UpdateCurrentValue() run
 	s.Normalized.History.Valid = true
+
+	// Save timestamp of sensor update
+	s.LastUpdated = time.Now()
 }
 
 func (s *Sensor) NormalizeRawValue(rawValue int) int {
