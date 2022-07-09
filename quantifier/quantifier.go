@@ -8,11 +8,12 @@ package quantifier
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 	"time"
-	"log"
 
 	"thomas-leister.de/plantmonitor/configmanager"
+	"thomas-leister.de/plantmonitor/sensor"
 )
 
 type Urgency int64
@@ -43,13 +44,17 @@ type QuantificationHistory struct {
 type Quantifier struct {
 	QuantificationHistory QuantificationHistory // old value and level for comparison / history
 	QuantificationLevels  []QuantificationLevel // All available quantification levels.
+	Sensor                *sensor.Sensor        // Sensor for which to quantify (use for hysteresis)
 }
 
-func (q *Quantifier) Init(config *configmanager.Config) {
+func (q *Quantifier) Init(config *configmanager.Config, sensor *sensor.Sensor) {
 	log.Println("Initializing quantifier ...")
 
 	// Set to empty history
 	q.QuantificationHistory = QuantificationHistory{}
+
+	// Set sensor reference
+	q.Sensor = sensor
 
 	// Read all quantification levels from config and copy them into q.QuantificationLevels
 	q.QuantificationLevels = make([]QuantificationLevel, 0)
@@ -89,12 +94,14 @@ func (q *Quantifier) Init(config *configmanager.Config) {
 
 /*
  * Quantification function
- * Takes: value (0 < value < 100)
+ * Params:
+ *   - Normalized sensor value (0 <= value <= 100)
+ * 	 - Hysteresis margin: Increase / decrease level thresholds by a hysteresis margin (depending on sensor history / "direction")
  * Returns: QuantificationLevel
  */
-func (q *Quantifier) Quantify(value int) (QuantificationLevel, error) {
+func (q *Quantifier) Quantify(value int, hysteresisMargin int) (QuantificationLevel, error) {
 	for _, quantificationLevel := range q.QuantificationLevels {
-		if (value >= quantificationLevel.Start) && (value <= quantificationLevel.End) {
+		if (value >= quantificationLevel.Start+hysteresisMargin) && (value <= quantificationLevel.End+hysteresisMargin) {
 			//This is the correct quantification level.
 			return quantificationLevel, nil
 		}
@@ -115,8 +122,12 @@ func (q *Quantifier) EvaluateValue(moistureValue int) (int, QuantificationLevel,
 	var levelDirection int = 0
 	var err error
 
-	// First: Quantify current value and check which level we reached
-	currentLevel, err := q.Quantify(moistureValue)
+	// Calculate hysteresis margin. Its polarity depends on the direction of normalized sensor values. It's absolute value by settings.
+	hysteresisMargin := q.Sensor.Normalized.Current.Direction * (q.Sensor.Normalized.NoiseMargin / 2)
+	log.Printf("Sensor direction: %d | Hysteresis margin: %d \n", q.Sensor.Normalized.Current.Direction, hysteresisMargin)
+
+	// Quantify current value and check which level we reached
+	currentLevel, err := q.Quantify(moistureValue, hysteresisMargin)
 	if err != nil {
 		return levelDirection, QuantificationLevel{}, fmt.Errorf("could not evaluate new moisture Value: %s", err)
 	}

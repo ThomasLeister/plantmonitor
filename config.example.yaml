@@ -21,3 +21,4 @@ sensor:
   adc:
     raw_lower_bound: 0
     raw_upper_bound: 3612
+    raw_noise_margin: 50

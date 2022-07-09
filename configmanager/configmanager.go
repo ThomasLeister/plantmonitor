@@ -35,6 +35,7 @@ type Config struct {
 		Adc struct {
 			RawLowerBound int `yaml:"raw_lower_bound"`
 			RawUpperBound int `yaml:"raw_upper_bound"`
+			RawNoiseMargin int `yaml:"raw_noise_margin"`
 		} `yaml:"adc"`
 	} `yaml:"sensor"`
 

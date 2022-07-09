@@ -11,26 +11,12 @@ import (
 	mqttManagerPkg "thomas-leister.de/plantmonitor/mqttmanager"
 	quantifierPkg "thomas-leister.de/plantmonitor/quantifier"
 	reminderPkg "thomas-leister.de/plantmonitor/reminder"
+	sensorPkg "thomas-leister.de/plantmonitor/sensor"
 	xmppManagerPkg "thomas-leister.de/plantmonitor/xmppmanager"
 )
 
 /* Global var for config*/
 var config configManagerPkg.Config
-
-func normalizeRawValue(rawValue int) int {
-	// Normalize range
-	rangeNormalizedValue := rawValue - config.Sensor.Adc.RawLowerBound
-
-	// Normalize to percentage
-	percentageValue := float32(rangeNormalizedValue) * (100 / (float32(config.Sensor.Adc.RawUpperBound) - float32(config.Sensor.Adc.RawLowerBound)))
-
-	// Normalize meaning: Moisture rawValue is in fact "dryness" level: High => More dry. Low => more wet.
-	// Let's invert that!
-	percentageValueWetness := 100 - percentageValue
-
-	// Return wetness percentage
-	return int(percentageValueWetness)
-}
 
 func main() {
 	var err error
@@ -47,6 +33,10 @@ func main() {
 		log.Println("Config was read and parsed!")
 	}
 
+	// Init sensor
+	sensor := sensorPkg.Sensor{}
+	sensor.Init(&config)
+
 	// Init xmppmanager
 	xmppclient := xmppManagerPkg.XmppClient{}
 	xmppclient.Init(&config)
@@ -61,7 +51,7 @@ func main() {
 
 	// Init quantifier
 	quantifier := quantifierPkg.Quantifier{}
-	quantifier.Init(&config)
+	quantifier.Init(&config, &sensor)
 
 	// Init reminder engine
 	reminder := reminderPkg.Reminder{}
@@ -84,20 +74,19 @@ func main() {
 		mqttDecodedPayload := mqttclient.ParseMqttMessage(mqttMessage)
 		moistureRaw := mqttDecodedPayload.UplinkMessage.DecodedPayload.MoistureRaw
 
-		// Normalize raw value to percentage (and invert value)
-		normalizedMoistureValue := normalizeRawValue(int(moistureRaw))
+		// Update current sensor value
+		sensor.UpdateCurrentValue(int(moistureRaw))
+		log.Printf("Raw value: %d  |  Normalized value: %d %% \n", moistureRaw, sensor.Normalized.Current.Value)
 
-		log.Printf("Raw value: %d  |  Normalized value: %d %% \n", moistureRaw, normalizedMoistureValue)
-
-		// Put normalized value into quantifier evaluation
-		levelDirection, currentLevel, err := quantifier.EvaluateValue(normalizedMoistureValue)
+		// Put current sensor value into quantifier evaluation
+		levelDirection, currentLevel, err := quantifier.EvaluateValue(sensor.Normalized.Current.Value)
 		if err != nil {
 			log.Panic("Error happended during evaluation.")
 			break
 		}
 
 		// Send message via messenger
-		messenger.ResolveLevelToMessage(normalizedMoistureValue, levelDirection, currentLevel)
+		messenger.ResolveLevelToMessage(sensor.Normalized.Current.Value, levelDirection, currentLevel)
 
 		// Check for urgency and set reminder accordingly
 		if currentLevel.Urgency != quantifierPkg.UrgencyLow {
