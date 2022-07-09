@@ -21,7 +21,8 @@ var config configManagerPkg.Config
 func main() {
 	var err error
 	mqttMessageChannel := make(chan mqtt.Message)
-	xmppMessageChannel := make(chan interface{})
+	xmppMessageOutChannel := make(chan interface{})
+	xmppMessageInChannel := make(chan xmppManagerPkg.XmppInMessage)
 
 	log.Println(("Starting Plantmonitor ..."))
 
@@ -55,7 +56,7 @@ func main() {
 
 	// Init messenger
 	messenger := messengerPkg.Messenger{}
-	messenger.Init(&config, xmppMessageChannel, giphyclient)
+	messenger.Init(&config, xmppMessageOutChannel, xmppMessageInChannel, giphyclient, &sensor)
 
 	// Init reminder engine
 	reminder := reminderPkg.Reminder{}
@@ -65,7 +66,10 @@ func main() {
 	go mqttclient.RunMQTTListener(mqttMessageChannel)
 
 	// Start another Goroutine which sends XMPP messages when receiving new XmppTextMessage or XmppGifMessage strings
-	go xmppclient.RunXMPPClient(xmppMessageChannel)
+	go xmppclient.RunXMPPClient(xmppMessageOutChannel, xmppMessageInChannel)
+
+	// Start Messenger responder: Responds to incoming XMPP messages
+	go messenger.ResponderLoop()
 
 	/*
 	 * Watch the MQTT channel and receive new messages

@@ -9,17 +9,47 @@ import (
 	"log"
 	"math/rand"
 	"strconv"
+	"strings"
 
 	"thomas-leister.de/plantmonitor/configmanager"
 	"thomas-leister.de/plantmonitor/gifmanager"
 	"thomas-leister.de/plantmonitor/quantifier"
+	"thomas-leister.de/plantmonitor/sensor"
 	"thomas-leister.de/plantmonitor/xmppmanager"
 )
 
 type Messenger struct {
-	XmppMessageChannel chan interface{}
-	GiphyClient        gifmanager.GiphyClient
-	Messages           *configmanager.Messages
+	XmppMessageOutChannel chan interface{}
+	XmppMessageInChannel  chan xmppmanager.XmppInMessage // XMPP channel for incoming messages
+	GiphyClient           gifmanager.GiphyClient
+	Messages              *configmanager.Messages
+	Sensor                *sensor.Sensor
+}
+
+func (m *Messenger) ResponderLoop() {
+	for xmppMessage := range m.XmppMessageInChannel {
+		// Check which data was sent
+		sender := xmppMessage.From
+		//body := xmppMessage.Body
+
+		log.Printf("Retrieved a message from %s! Answering ...", sender)
+
+		simpleBodyString := strings.TrimSpace(strings.ToLower(xmppMessage.Body))
+
+		if simpleBodyString == "help" {
+			m.XmppMessageOutChannel <- xmppmanager.XmppTextMessage("Derzeit gibt es nur wenige Kommandos. Versuche mal: \n- \"Wie gehts's dir?\"")
+		} else if simpleBodyString == "wie geht's dir?" {
+			// If we have valid data, send them
+			if m.Sensor.Normalized.History.Valid {
+				// Respond via out channel
+				m.XmppMessageOutChannel <- xmppmanager.XmppTextMessage("Hey! Hier die aktuellen Daten über mich:\n" + "Bodenfeuchte: " + strconv.Itoa(m.Sensor.Normalized.Current.Value) + " %")
+			} else {
+				m.XmppMessageOutChannel <- xmppmanager.XmppTextMessage("Leider habe ich noch keine aktuellen Sensordaten für dich.")
+			}
+		} else {
+			m.XmppMessageOutChannel <- xmppmanager.XmppTextMessage("Konnte das Kommando nicht finden. Versuche: \"help\"")
+		}
+	}
 }
 
 /*
@@ -27,10 +57,12 @@ type Messenger struct {
  * - xmppMessageChannel to use
  * - Giphy client to use
  */
-func (m *Messenger) Init(config *configmanager.Config, xmppMessageChannel chan interface{}, giphyClient gifmanager.GiphyClient) {
+func (m *Messenger) Init(config *configmanager.Config, xmppMessageOutChannel chan interface{}, xmppMessageInChannel chan xmppmanager.XmppInMessage, giphyClient gifmanager.GiphyClient, sensor *sensor.Sensor) {
 	m.Messages = &config.Messages
-	m.XmppMessageChannel = xmppMessageChannel
+	m.XmppMessageOutChannel = xmppMessageOutChannel
+	m.XmppMessageInChannel = xmppMessageInChannel
 	m.GiphyClient = giphyClient
+	m.Sensor = sensor
 }
 
 /*
@@ -96,11 +128,11 @@ func (m *Messenger) ResolveLevelToMessage(normalizedMoistureValue int, levelDire
 	log.Printf("Sending message: \"%s\" \n", textMessage)
 
 	// Send text message
-	m.XmppMessageChannel <- xmppmanager.XmppTextMessage(textMessage + " \nBodenfeuchte: " + strconv.Itoa(normalizedMoistureValue) + " %")
+	m.XmppMessageOutChannel <- xmppmanager.XmppTextMessage(textMessage + " \nBodenfeuchte: " + strconv.Itoa(normalizedMoistureValue) + " %")
 
 	// Send GIF (if set in config)
 	if gifUrl != "" {
-		m.XmppMessageChannel <- xmppmanager.XmppGifMessage(gifUrl)
+		m.XmppMessageOutChannel <- xmppmanager.XmppGifMessage(gifUrl)
 	}
 
 	return nil
@@ -122,11 +154,11 @@ func (m *Messenger) SendReminder(currentLevel quantifier.QuantificationLevel, no
 	log.Printf("Sending message: \"%s\" \n", textMessage)
 
 	// Send text message
-	m.XmppMessageChannel <- xmppmanager.XmppTextMessage(textMessage + " \nBodenfeuchte: " + strconv.Itoa(normalizedMoistureValue) + " %")
+	m.XmppMessageOutChannel <- xmppmanager.XmppTextMessage(textMessage + " \nBodenfeuchte: " + strconv.Itoa(normalizedMoistureValue) + " %")
 
 	// Send GIF (if set in config)
 	if gifUrl != "" {
-		m.XmppMessageChannel <- xmppmanager.XmppGifMessage(gifUrl)
+		m.XmppMessageOutChannel <- xmppmanager.XmppGifMessage(gifUrl)
 	}
 
 	return nil

@@ -9,11 +9,12 @@ package xmppmanager
 
 import (
 	"fmt"
-	"gosrc.io/xmpp"
-	"gosrc.io/xmpp/stanza"
 	"log"
 	"os"
 	"strconv"
+
+	"gosrc.io/xmpp"
+	"gosrc.io/xmpp/stanza"
 	"thomas-leister.de/plantmonitor/configmanager"
 )
 
@@ -21,12 +22,19 @@ type XmppTextMessage string
 
 type XmppGifMessage string
 
+type XmppInMessage struct {
+	From string
+	Body string
+}
+
 type XmppClient struct {
-	Host      string
-	Port      int
-	Username  string
-	Password  string
-	Recipients []string
+	Host                  string
+	Port                  int
+	Username              string
+	Password              string
+	Recipients            []string
+	XmppMessageOutChannel chan interface{}
+	XmppMessageInChannel  chan XmppInMessage
 }
 
 func (x *XmppClient) HandleXmppMessage(s xmpp.Sender, p stanza.Packet) {
@@ -36,9 +44,12 @@ func (x *XmppClient) HandleXmppMessage(s xmpp.Sender, p stanza.Packet) {
 		return
 	}
 
-	_, _ = fmt.Fprintf(os.Stdout, "Body = %s - from = %s\n", msg.Body, msg.From)
-	reply := stanza.Message{Attrs: stanza.Attrs{To: msg.From}, Body: msg.Body}
-	_ = s.Send(reply)
+	inMsg := XmppInMessage{From: msg.From, Body: msg.Body}
+
+	// Just feed messages with Body into messenger responder. Not "typing" notifications etc.
+	if msg.Body != "" {
+		x.XmppMessageInChannel <- inMsg
+	}
 }
 
 func (x *XmppClient) XmppErrorHandler(err error) {
@@ -55,7 +66,10 @@ func (x *XmppClient) Init(config *configmanager.Config) error {
 	return nil
 }
 
-func (x *XmppClient) RunXMPPClient(xmppMessageChannel chan interface{}) {
+func (x *XmppClient) RunXMPPClient(xmppMessageOutChannel chan interface{}, xmppMessageInChannel chan XmppInMessage) {
+	x.XmppMessageOutChannel = xmppMessageOutChannel
+	x.XmppMessageInChannel = xmppMessageInChannel
+
 	xmppClientConfig := xmpp.Config{
 		TransportConfiguration: xmpp.TransportConfiguration{
 			Address: x.Host + ":" + strconv.Itoa(x.Port),
@@ -80,7 +94,7 @@ func (x *XmppClient) RunXMPPClient(xmppMessageChannel chan interface{}) {
 	go cm.Run()
 
 	// Wait for a new message to send (listen on channel)
-	for xmppMessage := range xmppMessageChannel {
+	for xmppMessage := range xmppMessageOutChannel {
 		xmppMessageStanza := stanza.Message{}
 
 		// Find out stanza type (TextMessage or GifMessage)
@@ -89,7 +103,7 @@ func (x *XmppClient) RunXMPPClient(xmppMessageChannel chan interface{}) {
 			log.Println("XMPP: Sending a text message")
 			tm := xmppMessage.(XmppTextMessage)
 			xmppMessageStanza = stanza.Message{
-				//Attrs: stanza.Attrs{To: x.Recipient}, 
+				//Attrs: stanza.Attrs{To: x.Recipient},
 				Body: string(tm),
 			}
 
