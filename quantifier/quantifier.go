@@ -20,8 +20,8 @@ type QuantificationLevel struct {
 	Start                int           // Quantification Level Start value (0 < value < 100)
 	End                  int           // ""
 	Name                 string        // Level name, such as "low", "normal", "high"
-	ChatMessageInitial   string        // Initial chat message. Not related to earlier state
-	ChatMessageUp        string        // Message to send if this level ist reached from a lower level
+	ChatMessageSteady   string        // Message to send if this level is steady
+	ChatMessageUp        string        // Message to send if this level is reached from a lower level
 	ChatMessageDown      string        // Message to send if this level is reached from a higher level
 	ChatMessageReminder  string        // Reminder chat message text
 	Urgency              Urgency       // Whether to remember humans of the (bad) state, in case this is a bad state. The higher the urgency, the higher the remember interval.
@@ -53,7 +53,7 @@ func (q *Quantifier) Init(config *configmanager.Config) {
 		newLevel.Start = level.Start
 		newLevel.End = level.End
 		newLevel.Name = level.Name
-		newLevel.ChatMessageInitial = level.ChatMessageInitial
+		newLevel.ChatMessageSteady = level.ChatMessageSteady
 		newLevel.ChatMessageUp = level.ChatMessageUp
 		newLevel.ChatMessageDown = level.ChatMessageDown
 		newLevel.ChatMessageReminder = level.ChatMessageReminder

@@ -37,7 +37,7 @@ type Config struct {
 		Start int `yaml:"start"`
 		End int `yaml:"end"`
 		Name string `yaml:"name"`
-		ChatMessageInitial string `yaml:"chat_message_initial"`
+		ChatMessageSteady string `yaml:"chat_message_steady"`
 		ChatMessageUp string `yaml:"chat_message_up"`
 		ChatMessageDown string `yaml:"chat_message_down"`
 		ChatMessageReminder string `yaml:"chat_message_reminder"`

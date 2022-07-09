@@ -12,6 +12,7 @@ import (
 	"thomas-leister.de/plantmonitor/giphy"
 	"thomas-leister.de/plantmonitor/xmppmanager"
 	"thomas-leister.de/plantmonitor/mqttmanager"
+	"thomas-leister.de/plantmonitor/messenger"
 )
 
 /* Global var for config*/
@@ -37,7 +38,6 @@ func main() {
 	var err error
 	mqttMessageChannel := make(chan mqtt.Message)
 	xmppMessageChannel := make(chan interface{})
-	var historyExists bool = false
 
 	fmt.Println(("Starting Plantmonitor ..."))
 
@@ -59,8 +59,8 @@ func main() {
 	mqttclient.Init(&config)
 
 	// Init Giphy
-	giphyclient := giphy.Giphy{}
-	giphyclient.Init(config.Giphy.ApiKey)
+	giphyClient := giphy.GiphyClient{}
+	giphyClient.Init(config.Giphy.ApiKey)
 
 	// Init quantifier
 	myQuantifier := quantifier.Quantifier{}
@@ -69,6 +69,10 @@ func main() {
 	// Init reminder engine
 	myReminder := reminder.Reminder{}
 	myReminder.Init(xmppMessageChannel)
+
+	// Init messenger 
+	myMessenger := messenger.Messenger{}
+	myMessenger.Init(xmppMessageChannel, giphyClient)
 
 	// Start a new Goroutine which listens for new messages and sents them over the mqttMessageChannel
 	go mqttclient.RunMQTTListener(mqttMessageChannel)
@@ -96,30 +100,8 @@ func main() {
 			break
 		}
 
-		if historyExists {
-			// If value has changed and we have history, output a message
-			if levelDirection == -1 {
-				// Send normalized value and level name / level message
-				fmt.Printf("Sending message: %s \n", currentLevel.ChatMessageDown)
-				xmppMessageChannel <- xmppmanager.XmppTextMessage(fmt.Sprintf("%s \n\nBodenfeuchte: %d %%", currentLevel.ChatMessageDown, normalizedMoistureValue))
-			} else if levelDirection == +1 {
-				// Send normalized value and level name / level message
-				fmt.Printf("Sending message: %s \n", currentLevel.ChatMessageUp)
-				xmppMessageChannel <- xmppmanager.XmppTextMessage(fmt.Sprintf("%s \n\nBodenfeuchte: %d %%", currentLevel.ChatMessageUp, normalizedMoistureValue))
-			} else if levelDirection == 0 {
-				// Level has not changed (or there has been no history)
-				fmt.Println("Level has not changed. Not sending any message (except for reminders).")
-			}
-		} else {
-			// No history exists, yet (e.g. due to power-on). Just tell about the current state.
-			fmt.Printf("Sending message: %s \n", currentLevel.ChatMessageInitial)
-			xmppMessageChannel <- xmppmanager.XmppTextMessage(fmt.Sprintf("%s \n\nBodenfeuchte: %d %%", currentLevel.ChatMessageInitial, normalizedMoistureValue))
-
-			// Send GIF: "I'm back"
-			gifUrl, _ := giphyclient.GetGifURL("I'm back")
-			xmppMessageChannel <- xmppmanager.XmppGifMessage(gifUrl)
-			historyExists = true
-		}
+		// Send message via messenger
+		myMessenger.ResolveLevelToMessage(normalizedMoistureValue, levelDirection, currentLevel)
 
 		// Check for urgency.
 		// If state demands urgent action, set a periodic reminder!

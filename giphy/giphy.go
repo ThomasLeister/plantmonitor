@@ -5,15 +5,15 @@ import (
 	"github.com/sanzaru/go-giphy"
 )
 
-type Giphy struct {
+type GiphyClient struct {
 	Apiclient *libgiphy.Giphy
 } 
 
-func (g *Giphy) Init(api_key string) {
+func (g *GiphyClient) Init(api_key string) {
 	g.Apiclient = libgiphy.NewGiphy(api_key)
 }
 
-func (g *Giphy) GetGifURL(keywords string) (string, error) {
+func (g *GiphyClient) GetGifURL(keywords string) (string, error) {
     dataRandom, err := g.Apiclient.GetRandom(keywords)
     if err != nil {
         fmt.Println("error:", err)
