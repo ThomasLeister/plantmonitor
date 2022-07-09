@@ -139,7 +139,7 @@ func (q *Quantifier) EvaluateValue(moistureValue int) (int, QuantificationLevel,
 		}
 	} else {
 		// We do not have history, yet. Let's say there has not been a change in value... and save the current value to history
-		log.Println("We do not have quantifier history, yet!")
+		log.Println("We do not have quantifier history, yet! Assuming levelDirection=0 (steady)")
 	}
 
 	// Return levelDirection, QuantificationLevel and error values
