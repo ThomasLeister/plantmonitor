@@ -4,7 +4,9 @@ _Backend for a LoRaWAN-based / MQTT-based soil moisture sensor, which sends noti
 
 ## Context
 
-This project is meant to be used with `plantmonitor-sensor`. It will receive raw ADC sensor values from the TTN network MQTT broker and notify defined XMPP users when moisture thresholds are hit. 
+This project is meant to be used with the `plantmonitor-sensor` software component (_"LoRaWAN Sensor"_). It will receive raw ADC sensor values from the TTN network MQTT broker and notify defined XMPP users when moisture thresholds are hit. 
+
+![Drawio Diagram](assets/Plantmonitor.drawio.svg)
 
 ## Features
 
