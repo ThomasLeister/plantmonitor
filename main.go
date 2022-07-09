@@ -153,11 +153,12 @@ func main() {
 			// Send message via messenger
 			messenger.ResolveLevelToMessage(sensor.Normalized.Current.Value, levelDirection, currentLevel)
 
-			// Check reminder period and reminder timer accordingly
+			// Stop all reminders for the old level
+			reminder.Stop()
+
+			// If new level demands a reminder, set it:
 			if currentLevel.NotificationInterval != 0 {
-				reminder.Set(currentLevel) // Set a reminder
-			} else {
-				reminder.Stop() // Do nothing. One message is enough. Stop existing reminders.
+				reminder.Set(currentLevel)
 			}
 		}
 	}
