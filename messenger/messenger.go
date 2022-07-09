@@ -1,20 +1,20 @@
-/* 
+/*
  * Messenger package:
  * Translates moisture levels into text / GIF messages and sends them to XmppManager
- */ 
-package messenger 
+ */
+package messenger
 
-import(
+import (
 	"fmt"
-	"thomas-leister.de/plantmonitor/xmppmanager"
-	"thomas-leister.de/plantmonitor/quantifier"
 	"thomas-leister.de/plantmonitor/gifmanager"
+	"thomas-leister.de/plantmonitor/quantifier"
+	"thomas-leister.de/plantmonitor/xmppmanager"
 )
 
 type Messenger struct {
-	HistoryExists bool
+	HistoryExists      bool
 	XmppMessageChannel chan interface{}
-	GiphyClient gifmanager.GiphyClient 
+	GiphyClient        gifmanager.GiphyClient
 }
 
 /*
@@ -27,9 +27,9 @@ func (m *Messenger) Init(xmppMessageChannel chan interface{}, giphyClient gifman
 	m.GiphyClient = giphyClient
 }
 
-/* 
- * Inputs: 
- * - Direction of levels (up, stead, down +1, 0, -1) 
+/*
+ * Inputs:
+ * - Direction of levels (up, stead, down +1, 0, -1)
  * - Current level
  * - Xmpp client instance to use for sending
  */
@@ -62,7 +62,7 @@ func (m *Messenger) ResolveLevelToMessage(normalizedMoistureValue int, levelDire
 		} else {
 			m.XmppMessageChannel <- xmppmanager.XmppGifMessage(gifUrl)
 		}
-		
+
 		// Send sensor data ("steady" message)
 		m.XmppMessageChannel <- xmppmanager.XmppTextMessage(fmt.Sprintf("%s \n\nBodenfeuchte: %d %%", currentLevel.ChatMessageSteady, normalizedMoistureValue))
 

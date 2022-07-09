@@ -26,7 +26,7 @@ type QuantificationLevel struct {
 	Start                int           // Quantification Level Start value (0 < value < 100)
 	End                  int           // ""
 	Name                 string        // Level name, such as "low", "normal", "high"
-	ChatMessageSteady   string        // Message to send if this level is steady
+	ChatMessageSteady    string        // Message to send if this level is steady
 	ChatMessageUp        string        // Message to send if this level is reached from a lower level
 	ChatMessageDown      string        // Message to send if this level is reached from a higher level
 	ChatMessageReminder  string        // Reminder chat message text
@@ -63,7 +63,7 @@ func (q *Quantifier) Init(config *configmanager.Config) {
 		newLevel.ChatMessageUp = level.ChatMessageUp
 		newLevel.ChatMessageDown = level.ChatMessageDown
 		newLevel.ChatMessageReminder = level.ChatMessageReminder
-		newLevel.NotificationInterval = time.Duration(level.NotificationInterval) * time.Second	
+		newLevel.NotificationInterval = time.Duration(level.NotificationInterval) * time.Second
 
 		if level.Urgency == "low" {
 			newLevel.Urgency = UrgencyLow
@@ -76,7 +76,7 @@ func (q *Quantifier) Init(config *configmanager.Config) {
 		// Append new item to levels
 		q.QuantificationLevels = append(q.QuantificationLevels, newLevel)
 	}
-	
+
 	// Read values back
 	fmt.Println("Available levels:")
 	fmt.Println("---------------------------------------------")

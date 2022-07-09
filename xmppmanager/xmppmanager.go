@@ -1,19 +1,19 @@
 /*
- * XmppManager: Manages XMPP connection and 
+ * XmppManager: Manages XMPP connection and
  * offers xmppMessageChannel for sending various types of XMPP Messages:
  * 		- XmppTextMessage or
  * 		- XmppGifMessage
  */
 
-package xmppmanager 
+package xmppmanager
 
 import (
 	"fmt"
-	"os"
 	"gosrc.io/xmpp"
 	"gosrc.io/xmpp/stanza"
-	"strconv"
 	"log"
+	"os"
+	"strconv"
 	"thomas-leister.de/plantmonitor/configmanager"
 )
 
@@ -22,10 +22,10 @@ type XmppTextMessage string
 type XmppGifMessage string
 
 type XmppClient struct {
-	Host string 
-	Port int 
-	Username string 
-	Password string 
+	Host      string
+	Port      int
+	Username  string
+	Password  string
 	Recipient string
 }
 
@@ -95,15 +95,15 @@ func (x *XmppClient) RunXMPPClient(xmppMessageChannel chan interface{}) {
 			gm := xmppMessage.(XmppGifMessage)
 
 			xmppMessageStanza = stanza.Message{
-				Attrs: stanza.Attrs{To: x.Recipient}, 
+				Attrs: stanza.Attrs{To: x.Recipient},
 				Extensions: []stanza.MsgExtension{
 					stanza.OOB{
-						URL: string(gm),
+						URL:  string(gm),
 						Desc: "GIF with meme",
 					},
 				},
 			}
-		
+
 		default:
 			fmt.Println("ERROR: Type of message to send is unknown. Send one of XmppTextMessage or XmppGifMessage!")
 			continue // Quit this for() round

@@ -1,5 +1,5 @@
-/* 
- * Reminder: 
+/*
+ * Reminder:
  * Implements goroutines with timer for reminding of cricital moisture levels
  */
 
@@ -14,9 +14,9 @@ import (
 )
 
 type Reminder struct {
-	quitChannel        chan bool    // Control channel to end reminder loop
-	xmppMessageChannel chan interface{}  // Channel to xmpp service
-	ticker             *time.Ticker // Ticker for notification loop
+	quitChannel        chan bool        // Control channel to end reminder loop
+	xmppMessageChannel chan interface{} // Channel to xmpp service
+	ticker             *time.Ticker     // Ticker for notification loop
 	tickerRunning      bool
 }
 

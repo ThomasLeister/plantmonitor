@@ -1,26 +1,23 @@
 package mqttmanager
 
 import (
-	"fmt"
 	"encoding/json"
-	
+	"fmt"
+
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 
 	"thomas-leister.de/plantmonitor/configmanager"
 )
 
-
-
 type MqttClient struct {
-	Host string 
-	Port int
-	Username string 
-	Password string
-	Topic string
-	connectHandler mqtt.OnConnectHandler
+	Host               string
+	Port               int
+	Username           string
+	Password           string
+	Topic              string
+	connectHandler     mqtt.OnConnectHandler
 	connectLostHandler mqtt.OnConnectHandler
 }
-
 
 type MqttDecodedPayload struct {
 	MoistureRaw uint16 `json:"moisture_raw"`
@@ -33,7 +30,6 @@ type MqttUplinkMessage struct {
 type MqttPayload struct {
 	UplinkMessage MqttUplinkMessage `json:"uplink_message"`
 }
-
 
 func (m *MqttClient) ParseMqttMessage(mqttMessage mqtt.Message) MqttPayload {
 	var mqttPayload MqttPayload
@@ -55,10 +51,10 @@ func (m *MqttClient) ConnectLostHandler(client mqtt.Client, err error) {
 }
 
 func (m *MqttClient) Init(config *configmanager.Config) {
-	m.Host = config.Mqtt.Host 
-	m.Port = config.Mqtt.Port 
-	m.Username = config.Mqtt.Username 
-	m.Password = config.Mqtt.Password 
+	m.Host = config.Mqtt.Host
+	m.Port = config.Mqtt.Port
+	m.Username = config.Mqtt.Username
+	m.Password = config.Mqtt.Password
 	m.Topic = config.Mqtt.Topic
 }
 

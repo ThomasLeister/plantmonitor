@@ -7,17 +7,16 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 
 	configManagerPkg "thomas-leister.de/plantmonitor/configmanager"
+	gifManagerPkg "thomas-leister.de/plantmonitor/gifmanager"
+	messengerPkg "thomas-leister.de/plantmonitor/messenger"
+	mqttManagerPkg "thomas-leister.de/plantmonitor/mqttmanager"
 	quantifierPkg "thomas-leister.de/plantmonitor/quantifier"
 	reminderPkg "thomas-leister.de/plantmonitor/reminder"
-	gifManagerPkg "thomas-leister.de/plantmonitor/gifmanager"
 	xmppManagerPkg "thomas-leister.de/plantmonitor/xmppmanager"
-	mqttManagerPkg "thomas-leister.de/plantmonitor/mqttmanager"
-	messengerPkg "thomas-leister.de/plantmonitor/messenger"
 )
 
 /* Global var for config*/
 var config configManagerPkg.Config
-
 
 func normalizeRawValue(rawValue int) int {
 	// Normalize range
@@ -50,7 +49,7 @@ func main() {
 		fmt.Println("Config was read and parsed!")
 	}
 
-	// Init xmppmanager 
+	// Init xmppmanager
 	xmppclient := xmppManagerPkg.XmppClient{}
 	xmppclient.Init(&config)
 
@@ -70,7 +69,7 @@ func main() {
 	reminder := reminderPkg.Reminder{}
 	reminder.Init(xmppMessageChannel)
 
-	// Init messenger 
+	// Init messenger
 	messenger := messengerPkg.Messenger{}
 	messenger.Init(xmppMessageChannel, giphyclient)
 
@@ -80,11 +79,10 @@ func main() {
 	// Start another Goroutine which sends XMPP messages when receiving new XmppTextMessage or XmppGifMessage strings
 	go xmppclient.RunXMPPClient(xmppMessageChannel)
 
-	
 	/*
 	 * Watch the MQTT channel and receive new messages
 	 */
-	 for mqttMessage := range mqttMessageChannel {
+	for mqttMessage := range mqttMessageChannel {
 		mqttDecodedPayload := mqttclient.ParseMqttMessage(mqttMessage)
 		moistureRaw := mqttDecodedPayload.UplinkMessage.DecodedPayload.MoistureRaw
 
@@ -107,7 +105,7 @@ func main() {
 		if currentLevel.Urgency != quantifierPkg.UrgencyLow {
 			reminder.Set(currentLevel)
 		} else {
-			reminder.Stop()		// Do nothing. One message is enough. Stop existing reminders.
+			reminder.Stop() // Do nothing. One message is enough. Stop existing reminders.
 		}
 	}
 
