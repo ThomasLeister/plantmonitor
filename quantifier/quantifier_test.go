@@ -74,8 +74,14 @@ func TestEvaluateValue(t *testing.T) {
 	testcases = append(testcases, TestCase{SENSOR_NORMALIZED_VALUE_NORMAL_LOWEREDGE - HYSTERESIS_MARGIN, 0, "normal"}) // TC 8: Check hysteresis margin downwards. Should keep level.
 	testcases = append(testcases, TestCase{SENSOR_NORMALIZED_VALUE_NORMAL_UPPEREDGE + HYSTERESIS_MARGIN, 0, "normal"}) // TC 9: Check hysteresis margin upwards. Should keep level.
 
-	testcases = append(testcases, TestCase{SENSOR_NORMALIZED_VALUE_NORMAL_UPPEREDGE + HYSTERESIS_MARGIN + 1, 1, "high"})  // TC 10: Check hysteresis break-through: Should increase level to "high".
-	testcases = append(testcases, TestCase{SENSOR_NORMALIZED_VALUE_HIGH_LOWEREDGE - HYSTERESIS_MARGIN - 1, -1, "normal"}) // TC 11: Check hysteresis break-through: Should decrease level to "normal".
+	/*  Test for bug in previous hysteresis implementation:
+	    While sitting in the hysteresis margin: Stay there. Don't change sensor value
+	    Expected: No level change. Keep "normal" level.
+	    Bug lead to: level Change to "high". (also lets next test fail!)    */
+	testcases = append(testcases, TestCase{SENSOR_NORMALIZED_VALUE_NORMAL_UPPEREDGE + HYSTERESIS_MARGIN, 0, "normal"}) // TC 10
+
+	testcases = append(testcases, TestCase{SENSOR_NORMALIZED_VALUE_NORMAL_UPPEREDGE + HYSTERESIS_MARGIN + 1, 1, "high"})  // TC 11: Check hysteresis break-through: Should increase level to "high".
+	testcases = append(testcases, TestCase{SENSOR_NORMALIZED_VALUE_HIGH_LOWEREDGE - HYSTERESIS_MARGIN - 1, -1, "normal"}) // TC 12: Check hysteresis break-through: Should decrease level to "normal".
 
 	/*
 	 * Test case loop: quantify and validate
