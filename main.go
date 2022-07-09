@@ -1,8 +1,7 @@
 package main
 
 import (
-	"fmt"
-	"os"
+	"log"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 
@@ -38,15 +37,14 @@ func main() {
 	mqttMessageChannel := make(chan mqtt.Message)
 	xmppMessageChannel := make(chan interface{})
 
-	fmt.Println(("Starting Plantmonitor ..."))
+	log.Println(("Starting Plantmonitor ..."))
 
 	// Read config
 	config, err = configManagerPkg.ReadConfig("config.yaml")
 	if err != nil {
-		fmt.Println("Could not parse config:", err)
-		os.Exit(1)
+		log.Fatal("Could not parse config:", err)
 	} else {
-		fmt.Println("Config was read and parsed!")
+		log.Println("Config was read and parsed!")
 	}
 
 	// Init xmppmanager
@@ -89,12 +87,12 @@ func main() {
 		// Normalize raw value to percentage (and invert value)
 		normalizedMoistureValue := normalizeRawValue(int(moistureRaw))
 
-		fmt.Printf("Raw value: %d  |  Normalized value: %d %% \n", moistureRaw, normalizedMoistureValue)
+		log.Printf("Raw value: %d  |  Normalized value: %d %% \n", moistureRaw, normalizedMoistureValue)
 
 		// Put normalized value into quantifier evaluation
 		levelDirection, currentLevel, err := quantifier.EvaluateValue(normalizedMoistureValue)
 		if err != nil {
-			fmt.Printf("Error happended during evaluation.")
+			log.Panic("Error happended during evaluation.")
 			break
 		}
 
@@ -109,5 +107,5 @@ func main() {
 		}
 	}
 
-	fmt.Println("Plant monitor failed. Exiting ...")
+	log.Fatal("Plant monitor failed. Exiting ...")
 }

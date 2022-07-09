@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"strconv"
 	"time"
+	"log"
 
 	"thomas-leister.de/plantmonitor/configmanager"
 )
@@ -45,7 +46,7 @@ type Quantifier struct {
 }
 
 func (q *Quantifier) Init(config *configmanager.Config) {
-	fmt.Println("Initializing quantifier ...")
+	log.Println("Initializing quantifier ...")
 
 	// Set to empty history
 	q.QuantificationHistory = QuantificationHistory{}
@@ -78,7 +79,7 @@ func (q *Quantifier) Init(config *configmanager.Config) {
 	}
 
 	// Read values back
-	fmt.Println("Available levels:")
+	fmt.Println("Available quantification levels:")
 	fmt.Println("---------------------------------------------")
 	for _, level := range q.QuantificationLevels {
 		fmt.Printf("|" + level.Name + " | " + strconv.Itoa(level.Start) + " | " + strconv.Itoa(level.End) + " |\n")
@@ -137,7 +138,7 @@ func (q *Quantifier) EvaluateValue(moistureValue int) (int, QuantificationLevel,
 		}
 	} else {
 		// We do not have history, yet. Let's say there has not been a change in value... and save the current value to history
-		fmt.Println("We do not have history, yet!")
+		log.Println("We do not have history, yet!")
 	}
 
 	// Save new value and level to history

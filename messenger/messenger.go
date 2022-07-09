@@ -6,6 +6,8 @@ package messenger
 
 import (
 	"fmt"
+	"log"
+
 	"thomas-leister.de/plantmonitor/gifmanager"
 	"thomas-leister.de/plantmonitor/quantifier"
 	"thomas-leister.de/plantmonitor/xmppmanager"
@@ -34,31 +36,31 @@ func (m *Messenger) Init(xmppMessageChannel chan interface{}, giphyClient gifman
  * - Xmpp client instance to use for sending
  */
 func (m *Messenger) ResolveLevelToMessage(normalizedMoistureValue int, levelDirection int, currentLevel quantifier.QuantificationLevel) error {
-	fmt.Println("Resolving level and direction to message...")
+	log.Println("Resolving level and direction to message...")
 
 	if m.HistoryExists {
 		// If value has changed and we have history, output a message
 		if levelDirection == -1 {
 			// Send normalized value and level name / level message
-			fmt.Printf("Sending message: %s \n", currentLevel.ChatMessageDown)
+			log.Printf("Sending message: %s \n", currentLevel.ChatMessageDown)
 			m.XmppMessageChannel <- xmppmanager.XmppTextMessage(fmt.Sprintf("%s \n\nBodenfeuchte: %d %%", currentLevel.ChatMessageDown, normalizedMoistureValue))
 		} else if levelDirection == +1 {
 			// Send normalized value and level name / level message
-			fmt.Printf("Sending message: %s \n", currentLevel.ChatMessageUp)
+			log.Printf("Sending message: %s \n", currentLevel.ChatMessageUp)
 			m.XmppMessageChannel <- xmppmanager.XmppTextMessage(fmt.Sprintf("%s \n\nBodenfeuchte: %d %%", currentLevel.ChatMessageUp, normalizedMoistureValue))
 		} else if levelDirection == 0 {
 			// Level has not changed (or there has been no history)
-			fmt.Println("Level has not changed. Not sending any message (except for reminders).")
+			log.Println("Level has not changed. Not sending any message (except for reminders).")
 		}
 	} else {
 		// No history exists, yet (e.g. due to power-on). Just tell about the current state.
-		fmt.Printf("Sending message: %s \n", currentLevel.ChatMessageSteady)
+		log.Printf("Sending message: %s \n", currentLevel.ChatMessageSteady)
 
 		// Send message and GIF: "I'm back"
 		m.XmppMessageChannel <- xmppmanager.XmppTextMessage("Ich bin wieder online!")
 		gifUrl, err := m.GiphyClient.GetGifURL("I'm back")
 		if err != nil {
-			fmt.Println("Failed to retrieve GIF:", err)
+			log.Println("Failed to retrieve GIF:", err)
 		} else {
 			m.XmppMessageChannel <- xmppmanager.XmppGifMessage(gifUrl)
 		}

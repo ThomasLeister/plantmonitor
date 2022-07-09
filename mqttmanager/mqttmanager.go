@@ -3,6 +3,7 @@ package mqttmanager
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 
@@ -43,11 +44,11 @@ func (m *MqttClient) ParseMqttMessage(mqttMessage mqtt.Message) MqttPayload {
 }
 
 func (m *MqttClient) ConnectHandler(client mqtt.Client) {
-	fmt.Printf("Connected to %s \n", m.Host)
+	log.Printf("MQTT: Connected to %s \n", m.Host)
 }
 
 func (m *MqttClient) ConnectLostHandler(client mqtt.Client, err error) {
-	fmt.Printf("Connect lost: %v \n", err)
+	log.Printf("MQTT: Connection lost: %v \n", err)
 }
 
 func (m *MqttClient) Init(config *configmanager.Config) {
@@ -83,5 +84,5 @@ func (m *MqttClient) RunMQTTListener(mqttMessageChannel chan mqtt.Message) {
 	// Subscribe to topic
 	token := client.Subscribe(m.Topic, 1, nil)
 	token.Wait()
-	fmt.Printf("Subscribed to topic %s \n", m.Topic)
+	log.Printf("MQTT: Subscribed to topic %s \n", m.Topic)
 }

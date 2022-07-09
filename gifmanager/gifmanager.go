@@ -6,7 +6,7 @@
 package gifmanager
 
 import (
-	"fmt"
+	"log"
 	"github.com/sanzaru/go-giphy"
 )
 
@@ -21,12 +21,12 @@ func (g *GiphyClient) Init(api_key string) {
 func (g *GiphyClient) GetGifURL(keywords string) (string, error) {
 	dataRandom, err := g.Apiclient.GetRandom(keywords)
 	if err != nil {
-		fmt.Println("error:", err)
+		log.Println("GifManager: ", err)
 		return "", err
 	}
 
 	gifUrl := dataRandom.Data.Images.Original.Mp4
-	fmt.Printf("GIF URL: %+v\n", gifUrl)
+	log.Printf("GifManager: GIF URL: %+v\n", gifUrl)
 
 	return gifUrl, nil
 }

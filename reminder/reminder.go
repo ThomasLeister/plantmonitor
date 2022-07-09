@@ -8,6 +8,7 @@ package reminder
 import (
 	"fmt"
 	"time"
+	"log"
 
 	"thomas-leister.de/plantmonitor/quantifier"
 	. "thomas-leister.de/plantmonitor/xmppmanager"
@@ -28,10 +29,10 @@ func (r *Reminder) reminderNotificationLoop(quitChannel chan bool, ticker *time.
 		case <-quitChannel:
 			ticker.Stop()
 			r.tickerRunning = false
-			fmt.Println("Timer: Stopped.")
+			log.Println("Timer: Stopped.")
 			return
 		case t := <-ticker.C:
-			fmt.Println("Remembering ...", t)
+			fmt.Println("Timer: Remembering user ...", t)
 			r.xmppMessageChannel <- XmppTextMessage(level.ChatMessageReminder)
 		}
 	}
@@ -45,7 +46,7 @@ func (r *Reminder) Init(xmppMessageChannel chan interface{}) {
 }
 
 func (r *Reminder) Set(currentLevel quantifier.QuantificationLevel) {
-	fmt.Println("Setting timer")
+	log.Println("Timer: Setting timer")
 	r.Stop()
 	r.ticker = time.NewTicker(currentLevel.NotificationInterval)
 	go r.reminderNotificationLoop(r.quitChannel, r.ticker, currentLevel)
@@ -53,7 +54,7 @@ func (r *Reminder) Set(currentLevel quantifier.QuantificationLevel) {
 
 func (r *Reminder) Stop() {
 	if r.tickerRunning {
-		fmt.Println("Stopping timer...")
+		log.Println("Timer: Stopping timer...")
 		r.quitChannel <- true
 	}
 }
