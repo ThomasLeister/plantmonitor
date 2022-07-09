@@ -33,6 +33,8 @@ type Sensor struct {
 }
 
 func (s *Sensor) Init(config *configmanager.Config) {
+	log.Println("Initializing sensor ...")
+
 	s.Adc.RawLowerBound = config.Sensor.Adc.RawLowerBound
 	s.Adc.RawUpperBound = config.Sensor.Adc.RawUpperBound
 	s.Adc.RawNoiseMargin = config.Sensor.Adc.RawNoiseMargin

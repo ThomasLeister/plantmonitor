@@ -7,7 +7,8 @@ package gifmanager
 
 import (
 	"log"
-	"github.com/sanzaru/go-giphy"
+
+	libgiphy "github.com/sanzaru/go-giphy"
 )
 
 type GiphyClient struct {
@@ -15,6 +16,8 @@ type GiphyClient struct {
 }
 
 func (g *GiphyClient) Init(api_key string) {
+	log.Println("Initializing gifmanager ...")
+
 	g.Apiclient = libgiphy.NewGiphy(api_key)
 }
 

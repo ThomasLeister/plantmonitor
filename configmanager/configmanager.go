@@ -6,6 +6,7 @@
 package configmanager
 
 import (
+	"log"
 	"os"
 
 	"gopkg.in/yaml.v2"
@@ -82,6 +83,8 @@ type Config struct {
 
 func ReadConfig(configFilePath string) (Config, error) {
 	config := Config{}
+
+	log.Println("Initializing configmanager ...")
 
 	/*
 	 * Parse main config file config.yaml

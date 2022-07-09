@@ -78,11 +78,11 @@ func (m *Messenger) ResponderLoop() {
 
 		if simpleBodyString != "" {
 			if simpleBodyString == "help" {
-				log.Println("Sending help menu")
+				log.Println("Messenger: Sending help menu")
 				m.XmppMessageOutChannel <- xmppmanager.XmppTextMessage{Recipients: recipients, Text: m.Messages.Answers.AvailableCommands}
 			} else if simpleBodyString == "wie geht's dir?" {
 				// If we have valid data, send them
-				log.Println("Sending health info")
+				log.Println("Messenger: Sending health info")
 				if m.Sensor.Normalized.History.Valid {
 					var messageStringBuffer bytes.Buffer
 
@@ -105,11 +105,11 @@ func (m *Messenger) ResponderLoop() {
 					m.XmppMessageOutChannel <- xmppmanager.XmppTextMessage{Recipients: recipients, Text: m.Messages.Answers.SensorDataUnavailable}
 				}
 			} else {
-				log.Println("Sending help info")
+				log.Println("Messenger: Sending help info")
 				m.XmppMessageOutChannel <- xmppmanager.XmppTextMessage{Recipients: recipients, Text: m.Messages.Answers.UnknownCommand}
 			}
 		} else {
-			log.Println("[Dropped message because it does not contain body]")
+			log.Println("Messenger: [Dropped message because it does not contain body]")
 		}
 	}
 }
@@ -121,6 +121,8 @@ func (m *Messenger) ResponderLoop() {
  */
 func (m *Messenger) Init(config *configmanager.Config, xmppMessageOutChannel chan interface{}, xmppMessageInChannel chan xmppmanager.XmppInMessage, giphyClient gifmanager.GiphyClient, sensor *sensor.Sensor) error {
 	var err error
+
+	log.Println("Initializing messenger ...")
 
 	m.Messages = &config.Messages
 	m.XmppMessageOutChannel = xmppMessageOutChannel
@@ -169,7 +171,7 @@ func (m *Messenger) GetMessage(levelName string, levelDirection int, reminder bo
 
 	// Build message type identifier, e.g. normal_steady, normal_up, normal_down, high_reminder, ... (just as in YAML config)
 	messageTypeString := levelName + "_" + levelDirectionString
-	log.Printf("Getting message for type %s\n", messageTypeString)
+	log.Printf("Messenger: Getting message for type %s\n", messageTypeString)
 
 	// Get messages array
 	if messageType, exists := m.Messages.Levels[messageTypeString]; exists {
@@ -184,7 +186,7 @@ func (m *Messenger) GetMessage(levelName string, levelDirection int, reminder bo
 			if gifKeywords != "" {
 				gifUrl, err = m.GiphyClient.GetGifURL(gifKeywords)
 				if err != nil {
-					fmt.Errorf("Could not retrieve GIF URL from gifmanager: %s", err)
+					fmt.Errorf("Messenger: Could not retrieve GIF URL from gifmanager: %s", err)
 				}
 			}
 		} else {
@@ -206,14 +208,14 @@ func (m *Messenger) GetMessage(levelName string, levelDirection int, reminder bo
  * - Xmpp client instance to use for sending
  */
 func (m *Messenger) ResolveLevelToMessage(normalizedMoistureValue int, levelDirection int, currentLevel quantifier.QuantificationLevel) error {
-	log.Println("Resolving level and direction to message...")
+	log.Println("Messenger: Resolving level and direction to message...")
 
 	// Send a text message and GIF (if any GIF keywords are defined)
 	textMessage, gifUrl, err := m.GetMessage(currentLevel.Name, levelDirection, false)
 	if err != nil {
 		fmt.Errorf("Could not get and suitable message from config for level %s and direction %d: %s", currentLevel.Name, levelDirection, err)
 	}
-	log.Printf("Sending message: \"%s\" \n", textMessage)
+	log.Printf("Messenger: Sending message: \"%s\" \n", textMessage)
 
 	// Send text message
 	m.XmppMessageOutChannel <- xmppmanager.XmppTextMessage{Text: textMessage + " \nBodenfeuchte: " + strconv.Itoa(normalizedMoistureValue) + " %"}
@@ -232,14 +234,14 @@ func (m *Messenger) ResolveLevelToMessage(normalizedMoistureValue int, levelDire
  * - Current Moisture level
  */
 func (m *Messenger) SendReminder(currentLevel quantifier.QuantificationLevel, normalizedMoistureValue int) error {
-	log.Println("Resolving level and direction to message...")
+	log.Println("Messenger: Resolving level and direction to message...")
 
 	// Send a text message and GIF (if any GIF keywords are defined)
 	textMessage, gifUrl, err := m.GetMessage(currentLevel.Name, 0, true)
 	if err != nil {
 		fmt.Errorf("Could not get and suitable reminder message from config for level %s: %s", currentLevel.Name, err)
 	}
-	log.Printf("Sending message: \"%s\" \n", textMessage)
+	log.Printf("Messenger: Sending message: \"%s\" \n", textMessage)
 
 	// Send text message
 	m.XmppMessageOutChannel <- xmppmanager.XmppTextMessage{Text: textMessage + " \nBodenfeuchte: " + strconv.Itoa(normalizedMoistureValue) + " %"}

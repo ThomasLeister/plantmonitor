@@ -53,6 +53,8 @@ func (m *MqttClient) ConnectLostHandler(client mqtt.Client, err error) {
 }
 
 func (m *MqttClient) Init(config *configmanager.Config) {
+	log.Println("Initializing mqttmanager ...")
+
 	m.Host = config.Mqtt.Host
 	m.Port = config.Mqtt.Port
 	m.Username = config.Mqtt.Username

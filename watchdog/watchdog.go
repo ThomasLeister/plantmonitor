@@ -22,6 +22,7 @@ type Watchdog struct {
 
 func (w *Watchdog) Init(config *configmanager.Config, messenger *messenger.Messenger) {
 	log.Println("Initializing watchdog ...")
+
 	w.Timeout = time.Duration(config.Watchdog.Timeout) * time.Second
 	w.Messenger = messenger
 }

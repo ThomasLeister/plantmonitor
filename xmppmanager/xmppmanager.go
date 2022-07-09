@@ -64,6 +64,8 @@ func (x *XmppClient) XmppErrorHandler(err error) {
 }
 
 func (x *XmppClient) Init(config *configmanager.Config) error {
+	log.Println("Initializing xmppmanager ...")
+
 	x.Host = config.Xmpp.Host
 	x.Port = config.Xmpp.Port
 	x.Username = config.Xmpp.Username

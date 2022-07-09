@@ -41,6 +41,8 @@ func (r *Reminder) reminderNotificationLoop(quitChannel chan bool, ticker *time.
 }
 
 func (r *Reminder) Init(messenger *messenger.Messenger, sensor *sensor.Sensor) {
+	log.Println("Initializing reminder ...")
+
 	r.Messenger = messenger
 	r.Sensor = sensor
 
