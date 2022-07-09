@@ -127,7 +127,8 @@ func (m *Messenger) Init(config *configmanager.Config, xmppMessageOutChannel cha
  */
 func (m *Messenger) GetMessage(levelName string, levelDirection int, reminder bool) (string, string, error) {
 	var levelDirectionString string = "steady"
-	var gifUrl string = ""
+	var responseMessage string
+	var gifUrl string
 	var err error
 
 	if !reminder {
@@ -142,27 +143,36 @@ func (m *Messenger) GetMessage(levelName string, levelDirection int, reminder bo
 		levelDirectionString = "reminder"
 	}
 
-	// Build message type identifier, e.g. normal_steady, normal_up, high_reminder, ... (just as in YAML config)
+	// Build message type identifier, e.g. normal_steady, normal_up, normal_down, high_reminder, ... (just as in YAML config)
 	messageTypeString := levelName + "_" + levelDirectionString
+	log.Printf("Getting message for type %s\n", messageTypeString)
 
 	// Get messages array
-	messageType := m.Messages.Levels[messageTypeString]
+	if messageType, exists := m.Messages.Levels[messageTypeString]; exists {
+		messages := messageType.Messages
 
-	// Choose one random message from the messages array
-	messages := messageType.Messages
-	messagesNum := len(messages)
-	randomMessage := messages[rand.Intn(messagesNum)]
+		// Choose one random message from the messages array if array is not empty
+		if messagesNum := len(messages); messagesNum > 0 {
+			responseMessage = messages[rand.Intn(messagesNum)]
 
-	// Choose a GIF
-	gifKeywords := messageType.GifKeywords
-	if gifKeywords != "" {
-		gifUrl, err = m.GiphyClient.GetGifURL(gifKeywords)
-		if err != nil {
-			fmt.Errorf("Could not retrieve GIF URL from gifmanager: %s", err)
+			// Choose a GIF
+			gifKeywords := messageType.GifKeywords
+			if gifKeywords != "" {
+				gifUrl, err = m.GiphyClient.GetGifURL(gifKeywords)
+				if err != nil {
+					fmt.Errorf("Could not retrieve GIF URL from gifmanager: %s", err)
+				}
+			}
+		} else {
+			responseMessage = fmt.Sprintf("[ERROR: No messages are defined for message type %s!]\n", messageTypeString)
+			log.Println(responseMessage)
 		}
+	} else {
+		responseMessage = fmt.Sprintf("[ERROR: Message type %s is undefined in config!]\n", messageTypeString)
+		log.Println(responseMessage)
 	}
 
-	return randomMessage, gifUrl, nil
+	return responseMessage, gifUrl, nil
 }
 
 /*
