@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strconv"
 	"time"
+
+	"thomas-leister.de/plantmonitor/configmanager"
 )
 
 type Urgency int64
@@ -36,20 +38,39 @@ type Quantifier struct {
 	QuantificationLevels  []QuantificationLevel // All available quantification levels.
 }
 
-func (q *Quantifier) Init() {
+func (q *Quantifier) Init(config *configmanager.Config) {
 	fmt.Println("Initializing quantifier ...")
 
 	// Set to empty history
 	q.QuantificationHistory = QuantificationHistory{}
 
 	// Read all quantification levels from config and copy them into q.QuantificationLevels
-	q.QuantificationLevels = make([]QuantificationLevel, 10)
-	q.QuantificationLevels = []QuantificationLevel{
-		{0, 30, "low", "Ich bin wieder online: Zu wenig Wasser.", "", "Gib' mir Wasser! Ich verdurste! :(", "Hallooo!? Ich steerbe!", UrgencyHigh, 5 * time.Second},
-		{31, 66, "normal", "Ich bin wieder online: Mir geht's gut!", "Ich fühle mich wieder gut. Danke!", "Das war ein bisschen viel, aber jetzt geht es wieder.", "", UrgencyLow, 0},
-		{67, 100, "high", "Ich bin wieder online: Ich habe zu viel Wasser!", "Da hast du's aber gut gemeint. Ich habe jetzt mehr als genug Wasser ;)", "", "... immer noch ziemlich feucht hier...", UrgencyMedium, 10 * time.Second},
-	}
+	q.QuantificationLevels = make([]QuantificationLevel, 0)
 
+	for _, level := range config.Levels {
+		// Map values from config to QuantificationLevel attributes. Most attributes match 1:1, but some need extra care.
+		newLevel := QuantificationLevel{}
+		newLevel.Start = level.Start
+		newLevel.End = level.End
+		newLevel.Name = level.Name
+		newLevel.ChatMessageInitial = level.ChatMessageInitial
+		newLevel.ChatMessageUp = level.ChatMessageUp
+		newLevel.ChatMessageDown = level.ChatMessageDown
+		newLevel.ChatMessageReminder = level.ChatMessageReminder
+		newLevel.NotificationInterval = time.Duration(level.NotificationInterval) * time.Second	
+
+		if level.Urgency == "low" {
+			newLevel.Urgency = UrgencyLow
+		} else if level.Urgency == "medium" {
+			newLevel.Urgency = UrgencyMedium
+		} else if level.Urgency == "high" {
+			newLevel.Urgency = UrgencyHigh
+		}
+
+		// Append new item to levels
+		q.QuantificationLevels = append(q.QuantificationLevels, newLevel)
+	}
+	
 	// Read values back
 	fmt.Println("Available levels:")
 	fmt.Println("---------------------------------------------")

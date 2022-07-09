@@ -1,0 +1,18 @@
+xmpp:
+  host: my.xmpp.host
+  port: 5222
+  username: username@my.xmpp.host
+  password: password
+  recipient: otheruser@my.xmpp.host
+
+mqtt:
+  host: eu1.cloud.thethings.network
+  port: 8883
+  username: myapp@ttn
+  password: myapppassword
+  topic: v3/myapp@ttn/devices/+/up
+
+sensor:
+  adc:
+    raw_lower_bound: 0
+    raw_upper_bound: 3612
