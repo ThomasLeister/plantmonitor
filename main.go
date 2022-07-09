@@ -12,6 +12,7 @@ import (
 	"gosrc.io/xmpp/stanza"
 
 	"thomas-leister.de/plantmonitor/quantifier"
+	"thomas-leister.de/plantmonitor/reminder"
 )
 
 const MQTT_SERVER = "eu1.cloud.thethings.network"
@@ -25,6 +26,9 @@ const XMPP_PORT = 5222
 const XMPP_USERNAME = "fritzpflanze@trashserver.net"
 const XMPP_PASSWORD = "fritzpflanze"
 const XMPP_RECIPIENT = "thomas.privat@trashserver.net"
+
+const NORMALIZE_RAW_LOWER_BOUND = 0    // Lowest raw ADC moisture value (water)
+const NORMALIZE_RAW_UPPER_BOUND = 4096 // Highest raw ADC moisture value (air)
 
 type MqttDecodedPayload struct {
 	MoistureRaw uint16 `json:"moisture_raw"`
@@ -136,18 +140,35 @@ func parseMqttMessage(mqttMessage mqtt.Message) MqttPayload {
 	return mqttPayload
 }
 
-func main() {
-	var quantificationLevel quantifier.QuantificationLevel
-	var err error
+func normalizeRawValue(rawValue int) int {
+	// Normalize range
+	rangeNormalizedValue := rawValue - NORMALIZE_RAW_LOWER_BOUND
 
+	// Normalize to percentage
+	percentageValue := float32(rangeNormalizedValue) * (100 / (float32(NORMALIZE_RAW_UPPER_BOUND) - float32(NORMALIZE_RAW_LOWER_BOUND)))
+
+	// Normalize meaning: Moisture rawValue is in fact "dryness" level: High => More dry. Low => more wet.
+	// Let's invert that!
+	percentageValueWetness := 100 - percentageValue
+
+	// Return wetness percentage
+	return int(percentageValueWetness)
+}
+
+func main() {
 	mqttMessageChannel := make(chan mqtt.Message)
 	xmppMessageChannel := make(chan string)
+	var historyExists bool = false
 
 	fmt.Println(("Starting Plantmonitor ..."))
 
 	// Init qauantifier
 	myQuantifier := quantifier.Quantifier{}
 	myQuantifier.Init()
+
+	// Init reminder engine
+	myReminder := reminder.Reminder{}
+	myReminder.Init(xmppMessageChannel)
 
 	// Start a new Goroutine which listens for new messages and sents them over the mqttMessageChannel
 	go runMQTTListener(mqttMessageChannel)
@@ -162,15 +183,49 @@ func main() {
 
 		moistureRaw := mqttDecodedPayload.UplinkMessage.DecodedPayload.MoistureRaw
 		fmt.Printf("Moisture raw value: %d\n", moistureRaw)
-		//xmppMessageChannel <- "New moisture value: " + strconv.Itoa(int(moistureRaw))
 
-		// Put value into quantifier
-		quantificationLevel, err = myQuantifier.Quantify(int(moistureRaw))
+		// Normalize raw value to percentage (and invert value)
+		normalizedMoistureValue := normalizeRawValue(int(moistureRaw))
+
+		fmt.Printf("Normalized value: %d\n", normalizedMoistureValue)
+
+		// Put value into evaluation
+		levelDirection, currentLevel, err := myQuantifier.EvaluateValue(normalizedMoistureValue)
 		if err != nil {
-			fmt.Println("Error at quantification:", err)
+			fmt.Printf("Error happended during evaluation.")
+			break
 		}
 
-		fmt.Printf("This values has been quantified as: %s \n", quantificationLevel.Name)
+		if historyExists {
+			// If value has changed and we have history, output a message
+			if levelDirection == -1 {
+				// Send normalized value and level name / level message
+				fmt.Printf("Sending message: %s \n", currentLevel.ChatMessageDown)
+				xmppMessageChannel <- fmt.Sprintf("%s \n\nBodenfeuchte: %d", currentLevel.ChatMessageDown, normalizedMoistureValue)
+			} else if levelDirection == +1 {
+				// Send normalized value and level name / level message
+				fmt.Printf("Sending message: %s \n", currentLevel.ChatMessageUp)
+				xmppMessageChannel <- fmt.Sprintf("%s \n\nBodenfeuchte: %d", currentLevel.ChatMessageUp, normalizedMoistureValue)
+			} else if levelDirection == 0 {
+				// Level has not changed (or there has been no history)
+				fmt.Println("Level has not changed. Not sending any message (except for reminders).")
+			}
+		} else {
+			// No history exists, yet (e.g. due to power-on). Just tell about the current state.
+			fmt.Printf("Sending message: %s \n", currentLevel.ChatMessageInitial)
+			xmppMessageChannel <- fmt.Sprintf("%s \n\nBodenfeuchte: %d", currentLevel.ChatMessageInitial, normalizedMoistureValue)
+			historyExists = true
+		}
+
+		// Check for urgency.
+		// If state demands urgent action, set a periodic reminder!
+		if currentLevel.Urgency != quantifier.UrgencyLow {
+			myReminder.Set(currentLevel)
+		} else {
+			// Do nothing. One message is enough.
+			myReminder.Stop()
+		}
+
 	}
 
 	fmt.Println("Plant monitor failed. Exiting ...")
