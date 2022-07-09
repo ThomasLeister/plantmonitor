@@ -30,7 +30,7 @@ func (w *Watchdog) Init(config *configmanager.Config, messenger *messenger.Messe
 // Initial start of watchdog
 func (w *Watchdog) Start() {
 	w.Timer = time.AfterFunc(w.Timeout, func() {
-		log.Println("Watchdog triggered!")
+		log.Println("Watchdog: Watchdog triggered! Warning users ...")
 		w.Messenger.SendSensorWarning(w.Timeout)
 	})
 	w.TimerRunning = true

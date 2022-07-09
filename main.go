@@ -163,5 +163,5 @@ func main() {
 		}
 	}
 
-	log.Fatal("Plant monitor failed. Exiting ...")
+	log.Fatal("Plantmonitor failed. Exiting ...")
 }
