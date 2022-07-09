@@ -26,6 +26,7 @@ sensor:
     raw_lower_bound: 1491   # Value between 1491 and 1504 most of the time. (wet)
     raw_upper_bound: 3624   # Value between 3610 and 3624 most of the time.  (dry)
     raw_noise_margin: 100   # Margin between min and max raw value which describe a very similar moisture value (noise). Controls hysteresis.
+  mvg_avg_len: 10           # Number of recent sensor values to take into consideration for moving average filter
 
 levels:
   - name: low

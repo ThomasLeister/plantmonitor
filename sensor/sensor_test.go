@@ -37,7 +37,7 @@ func TestNormalizeRawValue(t *testing.T) {
 
 	// Loop through testcases
 	for input, expected := range testData {
-		if result := sensor.NormalizeRawValue(input); result != expected {
+		if result := sensor.normalizeRawValue(input); result != expected {
 			t.Errorf("Expected value for raw value %d: %d. But got %d", input, expected, result)
 		}
 	}

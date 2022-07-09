@@ -63,6 +63,7 @@ type Config struct {
 			RawUpperBound  int `yaml:"raw_upper_bound"`
 			RawNoiseMargin int `yaml:"raw_noise_margin"`
 		} `yaml:"adc"`
+		MvgAvgLen int `yaml:"mvg_avg_len"`
 	} `yaml:"sensor"`
 
 	Levels []struct {

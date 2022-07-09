@@ -133,7 +133,7 @@ func main() {
 
 		// Update current sensor value
 		sensor.UpdateCurrentValue(int(moistureRaw))
-		log.Printf("Raw sensor value: %d  |  Normalized value: %d %% \n", moistureRaw, sensor.Normalized.Current.Value)
+		log.Printf("Raw sensor value: %d  |  Current normalized and filtered value: %d %% \n", moistureRaw, sensor.Normalized.Current.Value)
 
 		// Save state before first value is evaluated, because then history will exist for sure ;)
 		quantifierHistoryExists = quantifier.HistoryExists()
