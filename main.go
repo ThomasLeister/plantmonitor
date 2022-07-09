@@ -12,6 +12,7 @@ import (
 	quantifierPkg "thomas-leister.de/plantmonitor/quantifier"
 	reminderPkg "thomas-leister.de/plantmonitor/reminder"
 	sensorPkg "thomas-leister.de/plantmonitor/sensor"
+	watchdogPkg "thomas-leister.de/plantmonitor/watchdog"
 	xmppManagerPkg "thomas-leister.de/plantmonitor/xmppmanager"
 )
 
@@ -56,11 +57,18 @@ func main() {
 
 	// Init messenger
 	messenger := messengerPkg.Messenger{}
-	messenger.Init(&config, xmppMessageOutChannel, xmppMessageInChannel, giphyclient, &sensor)
+	err = messenger.Init(&config, xmppMessageOutChannel, xmppMessageInChannel, giphyclient, &sensor)
+	if err != nil {
+		log.Fatal("Could not initialize messenger:", err)
+	}
 
 	// Init reminder engine
 	reminder := reminderPkg.Reminder{}
 	reminder.Init(&messenger, &sensor)
+
+	// Init watchdog
+	watchdog := watchdogPkg.Watchdog{}
+	watchdog.Init(&config, &messenger)
 
 	// Start a new Goroutine which listens for new messages and sents them over the mqttMessageChannel
 	go mqttclient.RunMQTTListener(mqttMessageChannel)
@@ -76,6 +84,9 @@ func main() {
 	 */
 	for mqttMessage := range mqttMessageChannel {
 		log.Println("Received new sensor value via MQTT!")
+
+		// Satisfy watchdog
+		watchdog.Reset()
 
 		// Decode MQTT message
 		mqttDecodedPayload := mqttclient.ParseMqttMessage(mqttMessage)

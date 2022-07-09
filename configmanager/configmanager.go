@@ -17,8 +17,17 @@ type MessageType struct {
 }
 
 type Messages struct {
-	Online []string               `yaml:"online"`
-	Levels map[string]MessageType `yaml:"levels"`
+	Online  []string               `yaml:"online"`
+	Levels  map[string]MessageType `yaml:"levels"`
+	Answers struct {
+		CurrentState          string `yaml:"current_state"`
+		UnknownCommand        string `yaml:"unknown_command"`
+		AvailableCommands     string `yaml:"available_commands"`
+		SensorDataUnavailable string `yaml:"sensor_data_unavailable"`
+	} `yaml:"answers"`
+	Warnings struct {
+		SensorOffline string `yaml:"sensor_offline"`
+	} `yaml:"warnings"`
 }
 
 type Config struct {
@@ -38,6 +47,10 @@ type Config struct {
 		Topic    string `yaml:"topic"`
 		ClientId string `yaml:"client_id"`
 	} `yaml:"mqtt"`
+
+	Watchdog struct {
+		Timeout int `yaml:"timeout"`
+	} `yaml:"watchdog"`
 
 	Giphy struct {
 		ApiKey string `yaml:"api_key"`

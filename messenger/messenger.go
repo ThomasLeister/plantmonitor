@@ -5,11 +5,13 @@
 package messenger
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"math/rand"
 	"strconv"
 	"strings"
+	"text/template"
 	"time"
 
 	"thomas-leister.de/plantmonitor/configmanager"
@@ -25,6 +27,20 @@ type Messenger struct {
 	GiphyClient           gifmanager.GiphyClient
 	Messages              *configmanager.Messages
 	Sensor                *sensor.Sensor
+
+	Templates struct {
+		CurrentStateAnswer   *template.Template
+		WarningSensorOffline *template.Template
+	}
+}
+
+type CurrentStateAnswerParams struct {
+	SensorValue int
+	LastUpdated time.Time
+}
+
+type WarningSensorOfflineParams struct {
+	Timeout time.Duration
 }
 
 func (m *Messenger) ResponderLoop() {
@@ -40,28 +56,37 @@ func (m *Messenger) ResponderLoop() {
 		if simpleBodyString != "" {
 			if simpleBodyString == "help" {
 				log.Println("Sending help menu")
-				m.XmppMessageOutChannel <- xmppmanager.XmppTextMessage{Recipients: recipients, Text: "Derzeit gibt es nur wenige Kommandos. Versuche mal: \n- \"Wie gehts's dir?\""}
+				m.XmppMessageOutChannel <- xmppmanager.XmppTextMessage{Recipients: recipients, Text: m.Messages.Answers.AvailableCommands}
 			} else if simpleBodyString == "wie geht's dir?" {
 				// If we have valid data, send them
 				log.Println("Sending health info")
 				if m.Sensor.Normalized.History.Valid {
-					sensorValueString := strconv.Itoa(m.Sensor.Normalized.Current.Value)
-					lastUpdatedString := m.Sensor.LastUpdated.Format(time.RFC1123)
+					var messageStringBuffer bytes.Buffer
+
+					answerParams := CurrentStateAnswerParams{
+						SensorValue: m.Sensor.Normalized.Current.Value,
+						LastUpdated: m.Sensor.LastUpdated,
+					}
+
+					err := m.Templates.CurrentStateAnswer.Execute(&messageStringBuffer, answerParams)
+					if err != nil {
+						panic(err)
+					}
 
 					// Respond via out channel
 					m.XmppMessageOutChannel <- xmppmanager.XmppTextMessage{
 						Recipients: recipients,
-						Text:       "Hey! Hier die aktuellen Daten über mich:\n" + "Bodenfeuchte: " + sensorValueString + " %\nZeit: " + lastUpdatedString,
+						Text:       messageStringBuffer.String(),
 					}
 				} else {
-					m.XmppMessageOutChannel <- xmppmanager.XmppTextMessage{Recipients: recipients, Text: "Leider habe ich noch keine aktuellen Sensordaten für dich."}
+					m.XmppMessageOutChannel <- xmppmanager.XmppTextMessage{Recipients: recipients, Text: m.Messages.Answers.SensorDataUnavailable}
 				}
 			} else {
 				log.Println("Sending help info")
-				m.XmppMessageOutChannel <- xmppmanager.XmppTextMessage{Recipients: recipients, Text: "Konnte das Kommando nicht finden. Versuche: \"help\""}
+				m.XmppMessageOutChannel <- xmppmanager.XmppTextMessage{Recipients: recipients, Text: m.Messages.Answers.UnknownCommand}
 			}
 		} else {
-			log.Println("Dropped message because it does not contain body.")
+			log.Println("[Dropped message because it does not contain body]")
 		}
 	}
 }
@@ -71,12 +96,27 @@ func (m *Messenger) ResponderLoop() {
  * - xmppMessageChannel to use
  * - Giphy client to use
  */
-func (m *Messenger) Init(config *configmanager.Config, xmppMessageOutChannel chan interface{}, xmppMessageInChannel chan xmppmanager.XmppInMessage, giphyClient gifmanager.GiphyClient, sensor *sensor.Sensor) {
+func (m *Messenger) Init(config *configmanager.Config, xmppMessageOutChannel chan interface{}, xmppMessageInChannel chan xmppmanager.XmppInMessage, giphyClient gifmanager.GiphyClient, sensor *sensor.Sensor) error {
+	var err error
+
 	m.Messages = &config.Messages
 	m.XmppMessageOutChannel = xmppMessageOutChannel
 	m.XmppMessageInChannel = xmppMessageInChannel
 	m.GiphyClient = giphyClient
 	m.Sensor = sensor
+
+	// Load message strings and parse templates
+	m.Templates.CurrentStateAnswer, err = template.New("").Parse(config.Messages.Answers.CurrentState)
+	if err != nil {
+		return fmt.Errorf("failed to parse template for messages.answers.current_state: %s", err)
+	}
+
+	m.Templates.WarningSensorOffline, err = template.New("").Parse(config.Messages.Warnings.SensorOffline)
+	if err != nil {
+		return fmt.Errorf("failed to parse template for messages.warnings.sensor_offline: %s", err)
+	}
+
+	return nil
 }
 
 /*
@@ -176,4 +216,23 @@ func (m *Messenger) SendReminder(currentLevel quantifier.QuantificationLevel, no
 	}
 
 	return nil
+}
+
+func (m *Messenger) SendSensorWarning(interval time.Duration) {
+	var messageStringBuffer bytes.Buffer
+	log.Println("Sending sensor availability warning")
+
+	warningParams := WarningSensorOfflineParams{
+		Timeout: interval,
+	}
+
+	err := m.Templates.WarningSensorOffline.Execute(&messageStringBuffer, warningParams)
+	if err != nil {
+		panic(err)
+	}
+
+	// Respond via out channel
+	m.XmppMessageOutChannel <- xmppmanager.XmppTextMessage{
+		Text: messageStringBuffer.String(),
+	}
 }

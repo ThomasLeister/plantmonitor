@@ -15,6 +15,9 @@ mqtt:
   topic: v3/myapp@ttn/devices/+/up
   client_id: plantmonitor
 
+watchdog:
+  timeout: 360 # expect a new sensor value every 6 minutes
+
 giphy:
   api_key: "<mygiphykey>"
 
